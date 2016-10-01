@@ -175,10 +175,10 @@ type Logger struct {
 }
 
 func newLogger(loggerConfig *Configuration) *Logger {
-	fmt.Printf("CreatingLogger: File=%v DefaultLevel=%v\n", loggerConfig.Output, loggerConfig.DefaultLevel)
+	//fmt.Printf("CreatingLogger: File=%v DefaultLevel=%v\n", loggerConfig.Output, loggerConfig.DefaultLevel)
 	loggerFile, err := os.OpenFile(loggerConfig.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Printf("CreateOrOpenLoggerFileError: Message='%v'", err)
+		//fmt.Printf("CreateOrOpenLoggerFileError: Message='%v'", err)
 	}
 	errorWriter := io.MultiWriter(loggerFile, os.Stderr)
 	_logger := &Logger{
@@ -193,13 +193,13 @@ func newLogger(loggerConfig *Configuration) *Logger {
 }
 
 func getLoggerWriter(loggerConfig *Configuration) (io.Writer, error) {
-	fmt.Printf("CreatingLoggerFile: Output=%v DefaultLevel=%v\n", loggerConfig.Output, loggerConfig.DefaultLevel)
+	//fmt.Printf("CreatingLoggerFile: Output=%v DefaultLevel=%v\n", loggerConfig.Output, loggerConfig.DefaultLevel)
 	if strings.TrimSpace(loggerConfig.Output) == "" || loggerConfig.Output == "stdout" {
 		return os.Stdout, nil
 	}
 	loggerFile, err := os.OpenFile(loggerConfig.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Printf("CreateOrOpenLoggerFileError: Message='%v'\n", err)
+		//fmt.Printf("CreateOrOpenLoggerFileError: Message='%v'\n", err)
 		return nil, fmt.Errorf("CreateOrOpenLoggerFileError: Message='%v'", err)
 	}
 	return loggerFile, nil
