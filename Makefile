@@ -20,28 +20,37 @@ TEST_PKGS :=
 .PHONY: default
 default: build
 
-.PHONY: all
-all: build test bench_all coverage
-
-.PHONY: setup
-setup: install_sw_deps install_deps setup_nginx
-	@echo "Logger set" 
+.PHONY: install
+install: install_sw_deps sync
+	@echo "Logger installed successfully" 
 
 .PHONY: install_sw_deps
 install_sw_deps:
 	brew install go
+	go get -u github.com/kardianos/govendor
 
 .PHONY: install_deps
 install_deps:
-	go get -u github.com/kardianos/govendor
-	govendor add +local
 	#go get -u github.com/op/go-logging
 	#go get -u github.com/Sirupsen/logrus
 	#go get -u github.com/uber-go/zap
+	govendor add +local
+
+.PHONY: all
+all: build test bench_all coverage
 
 .PHONY: build
 build:
 	go build $(REPO)
+
+.PHONY: sync
+sync:
+	govendor sync
+
+.PHONY: reset
+reset: 
+	-rm $(NAME)*coverage*
+	-cd vendor; rm -r */
 
 .PHONY: local
 local: 
