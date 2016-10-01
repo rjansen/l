@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 const (
@@ -19,8 +20,15 @@ const (
 	//OP is the github.com/op/go-logging id
 	OP = "op"
 
+	//TEXT is the text log format
+	TEXT Format = "text"
+	//JSON is the json log format
+	JSON = "json"
+
 	//PANIC is the panic level logger
 	PANIC Level = iota
+	//FATAL is the fatal level logger
+	FATAL
 	//ERROR is the error level logger
 	ERROR
 	//WARN is the warn level logger
@@ -50,16 +58,19 @@ type Level int
 //Provider is the back end implementor id of the logging feature
 type Provider string
 
+//Format is a parameter to controle the logger style
+type Format string
+
 //Configuration holds the log beahvior parameters
 type Configuration struct {
-	File         string
-	DefaultLevel Level
-	Provider     Provider
-	Format       string
+	Provider      Provider
+	DefaultLevel  Level
+	DefaultFormat Format
+	Output        string
 }
 
 func (l *Configuration) String() string {
-	return fmt.Sprintf("Config[File=%v DefaultLevel=%v Format=%v]", l.File, l.DefaultLevel, l.Format)
+	return fmt.Sprintf("Config[Provider=%v DefaultLevel=%v DefaultFormat=%v Output=%v]", l.Provider, l.DefaultLevel, l.DefaultFormat, l.Output)
 }
 
 //Setup initializes the logger system
@@ -91,6 +102,22 @@ func GetLogger(module string) *logging.Logger {
 }
 
 func setupLogrus(loggerConfig *Configuration) error {
+	loggerWriter, err := getLoggerWriter(loggerConfig)
+	if err != nil {
+		return err
+	}
+	logrus.SetOutput(loggerWriter)
+	switch loggerConfig.DefaultFormat {
+	case JSON:
+		logrus.SetFormatter(new(logrus.TextFormatter))
+	default:
+		logrus.SetFormatter(new(logrus.TextFormatter))
+	}
+	if loggerConfig.DefaultLevel <= 0 {
+		logrus.SetLevel(logrus.Level(loggerConfig.DefaultLevel))
+	} else {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
 	Config = loggerConfig
 	return nil
 }
@@ -101,16 +128,15 @@ func setupZap(loggerConfig *Configuration) error {
 }
 
 func setupOp(loggerConfig *Configuration) error {
-	var loggerWriter io.Writer
-	loggerFile, err := getLoggerFile(loggerConfig)
+	loggerWriter, err := getLoggerWriter(loggerConfig)
 	if err != nil {
-		loggerWriter = os.Stdout
-	} else {
-		loggerWriter = loggerFile
+		return err
 	}
-	loggerFormat := logging.MustStringFormatter(loggerConfig.Format)
+	defaultOpFormat := "%{time:2006-01-02T15:04:05.999Z-07:00} %{id:03x} [%{level:.5s}] %{shortpkg}.%{longfunc} %{message}"
+	loggerFormat := logging.MustStringFormatter(defaultOpFormat)
 	//TODO: Remove os.Stdout. For performance reasons the log messages must send only to the file
-	backEndMessages := logging.NewBackendFormatter(logging.NewLogBackend(io.MultiWriter(os.Stdout, loggerWriter), "", 0), loggerFormat)
+	//backEndMessages := logging.NewBackendFormatter(logging.NewLogBackend(io.MultiWriter(os.Stdout, loggerWriter), "", 0), loggerFormat)
+	backEndMessages := logging.NewBackendFormatter(logging.NewLogBackend(loggerWriter, "", 0), loggerFormat)
 	backEndError := logging.NewBackendFormatter(logging.NewLogBackend(os.Stderr, "", 0), loggerFormat)
 
 	levelMessages := logging.AddModuleLevel(backEndMessages)
@@ -126,7 +152,6 @@ func setupOp(loggerConfig *Configuration) error {
 	levelError.SetLevel(logging.ERROR, "")
 
 	logging.SetBackend(levelMessages, levelError)
-	//fmt.Printf("LoggerConfiguredSuccessfully: LoggerConfig=%v\n", loggerConfig)
 	Config = loggerConfig
 	return nil
 }
@@ -150,8 +175,8 @@ type Logger struct {
 }
 
 func newLogger(loggerConfig *Configuration) *Logger {
-	fmt.Printf("CreatingLogger: File=%v DefaultLevel=%v\n", loggerConfig.File, loggerConfig.DefaultLevel)
-	loggerFile, err := os.OpenFile(loggerConfig.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	fmt.Printf("CreatingLogger: File=%v DefaultLevel=%v\n", loggerConfig.Output, loggerConfig.DefaultLevel)
+	loggerFile, err := os.OpenFile(loggerConfig.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Printf("CreateOrOpenLoggerFileError: Message='%v'", err)
 	}
@@ -167,9 +192,12 @@ func newLogger(loggerConfig *Configuration) *Logger {
 	return _logger
 }
 
-func getLoggerFile(loggerConfig *Configuration) (*os.File, error) {
-	fmt.Printf("CreatingLoggerFile: File=%v DefaultLevel=%v\n", loggerConfig.File, loggerConfig.DefaultLevel)
-	loggerFile, err := os.OpenFile(loggerConfig.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+func getLoggerWriter(loggerConfig *Configuration) (io.Writer, error) {
+	fmt.Printf("CreatingLoggerFile: Output=%v DefaultLevel=%v\n", loggerConfig.Output, loggerConfig.DefaultLevel)
+	if strings.TrimSpace(loggerConfig.Output) == "" || loggerConfig.Output == "stdout" {
+		return os.Stdout, nil
+	}
+	loggerFile, err := os.OpenFile(loggerConfig.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Printf("CreateOrOpenLoggerFileError: Message='%v'\n", err)
 		return nil, fmt.Errorf("CreateOrOpenLoggerFileError: Message='%v'", err)
