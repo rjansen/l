@@ -1,0 +1,31 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
+			"path": "github.com/Sirupsen/logrus",
+			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
+			"revisionTime": "2016-08-29T20:23:21Z"
+		},
+		{
+			"checksumSHA1": "BoXdUBWB8UnSlFlbnuTQaPqfCGk=",
+			"path": "github.com/op/go-logging",
+			"revision": "970db520ece77730c7e4724c61121037378659d9",
+			"revisionTime": "2016-03-15T20:05:05Z"
+		},
+		{
+			"checksumSHA1": "Qb0eMcC9P6tYLT4KNLvNNmvhPr4=",
+			"path": "github.com/uber-go/atomic",
+			"revision": "0c9e689d64f004564b79d9a663634756df322902",
+			"revisionTime": "2016-07-18T20:38:59Z"
+		},
+		{
+			"checksumSHA1": "j+wWJzvcoh8tITqZSTW/9iXUHBg=",
+			"path": "github.com/uber-go/zap",
+			"revision": "c4939d1166b2220bb45338e21506623b4bbdec50",
+			"revisionTime": "2016-09-29T23:02:16Z"
+		}
+	],
+	"rootPath": "farm.e-pedion.com/repo/logger"
+}

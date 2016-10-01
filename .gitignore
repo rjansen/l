@@ -1,0 +1,3 @@
+logger*coverage*
+vendor/**
+!vendor/vendor.json
