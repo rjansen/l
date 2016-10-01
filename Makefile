@@ -31,10 +31,9 @@ install_sw_deps:
 
 .PHONY: install_deps
 install_deps:
-	#go get -u github.com/op/go-logging
-	#go get -u github.com/Sirupsen/logrus
-	#go get -u github.com/uber-go/zap
-	govendor add +local
+	go get -u github.com/op/go-logging
+	go get -u github.com/Sirupsen/logrus
+	go get -u github.com/uber-go/zap
 
 .PHONY: all
 all: build test bench_all coverage
