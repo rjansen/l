@@ -76,3 +76,23 @@ func getOutput(out Out) (io.Writer, error) {
 		return file, nil
 	}
 }
+
+func String(key, val string) Field {
+	return Field{key: key, val: val}
+}
+
+func Int(key string, val int) Field {
+	return Field{key: key, val: val}
+}
+
+func Float(key string, val float64) Field {
+	return Field{key: key, val: val}
+}
+
+func Bool(key string, val bool) Field {
+	return Field{key: key, val: val}
+}
+
+func Struct(key string, val interface{}) Field {
+	return Field{key: key, val: val}
+}

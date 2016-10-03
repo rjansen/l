@@ -55,10 +55,10 @@ func TestNewLoggerSuccess(t *testing.T) {
 		case LOGGING:
 			assert.NotNil(t, logger.(*loggingLogger).logger)
 		}
-		logger.Debug("DebugMessage", Field{key: "config", val: c.config})
-		logger.Info("InfoMessage", Field{key: "config", val: c.config})
-		logger.Warn("WarnMessage", Field{key: "config", val: c.config})
-		logger.Error("ErrorMessage", Field{key: "config", val: c.config})
+		logger.Debug("DebugMessage", Struct("config", c.config))
+		logger.Info("InfoMessage", Struct("config", c.config))
+		logger.Warn("WarnMessage", Struct("config", c.config))
+		logger.Error("ErrorMessage", Struct("config", c.config))
 	}
 }
 
@@ -176,6 +176,7 @@ func BenchmarkLogrusFieldsLogger(b *testing.B) {
 func BenchmarkMyLogrusFieldsLogger(b *testing.B) {
 	setupErr := Setup(&Configuration{Provider: LOGRUS, Out: DISCARD})
 	assert.Nil(b, setupErr)
+	assert.Nil(b, setupErr)
 	logger := NewLogger()
 	assert.NotNil(b, logger)
 
@@ -183,16 +184,16 @@ func BenchmarkMyLogrusFieldsLogger(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			logger.Debug("BenchamarkMyLogrusFileds",
-				Field{"field1", "field1"},
-				Field{"field2", "field2"},
-				Field{"field3", "field3"},
-				Field{"field4", "field4"},
-				Field{"field5", "field5"},
-				Field{"field6", "field6"},
-				Field{"field7", "field7"},
-				Field{"field8", "field8"},
-				Field{"field9", "field9"},
-				Field{"field0", "field0"},
+				String("field1", "field1"),
+				String("field2", "field2"),
+				String("field3", "field3"),
+				String("field4", "field4"),
+				String("field5", "field5"),
+				String("field6", "field6"),
+				String("field7", "field7"),
+				String("field8", "field8"),
+				String("field9", "field9"),
+				String("field0", "field0"),
 			)
 		}
 	})
@@ -258,16 +259,16 @@ func BenchmarkMyZapLogger(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			logger.Debug("BenchamarkMyZap",
-				Field{"field1", "field1"},
-				Field{"field2", "field2"},
-				Field{"field3", "field3"},
-				Field{"field4", "field4"},
-				Field{"field5", "field5"},
-				Field{"field6", "field6"},
-				Field{"field7", "field7"},
-				Field{"field8", "field8"},
-				Field{"field9", "field9"},
-				Field{"field0", "field0"},
+				String("field1", "field1"),
+				String("field2", "field2"),
+				String("field3", "field3"),
+				String("field4", "field4"),
+				String("field5", "field5"),
+				String("field6", "field6"),
+				String("field7", "field7"),
+				String("field8", "field8"),
+				String("field9", "field9"),
+				String("field0", "field0"),
 			)
 		}
 	})
@@ -309,16 +310,16 @@ func BenchmarkMyLoggingFormatfLogger(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			logger.Debug("BenchamarkMyLogging",
-				Field{"field1", "field1"},
-				Field{"field2", "field2"},
-				Field{"field3", "field3"},
-				Field{"field4", "field4"},
-				Field{"field5", "field5"},
-				Field{"field6", "field6"},
-				Field{"field7", "field7"},
-				Field{"field8", "field8"},
-				Field{"field9", "field9"},
-				Field{"field0", "field0"},
+				String("field1", "field1"),
+				String("field2", "field2"),
+				String("field3", "field3"),
+				String("field4", "field4"),
+				String("field5", "field5"),
+				String("field6", "field6"),
+				String("field7", "field7"),
+				String("field8", "field8"),
+				String("field9", "field9"),
+				String("field0", "field0"),
 			)
 		}
 	})
