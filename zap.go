@@ -2,16 +2,59 @@ package logger
 
 import (
 	"github.com/uber-go/zap"
+	"os"
 )
+
+var (
+	zapFactory zap.Logger
+)
+
+func (f Format) toZapEncoder() zap.Encoder {
+	switch f {
+	case JSON:
+		return zap.NewJSONEncoder()
+	default:
+		return zap.NewTextEncoder()
+	}
+}
+
+func (o Out) toZapOut() zap.Option {
+	switch o {
+	case STDOUT:
+		return zap.Output(os.Stdout)
+	case STDERR:
+		return zap.Output(os.Stderr)
+	case DISCARD:
+		return zap.DiscardOutput
+	default:
+		fileOutput, _ := getOutput(o)
+		zapOutput := zap.AddSync(fileOutput)
+		return zap.Output(zapOutput)
+	}
+}
+
+func (n Level) toZapLevel() zap.Level {
+	switch n {
+	case DEBUG:
+		return zap.DebugLevel
+	case INFO:
+		return zap.InfoLevel
+	case WARN:
+		return zap.WarnLevel
+	case ERROR:
+		return zap.ErrorLevel
+	case PANIC:
+		return zap.PanicLevel
+	case FATAL:
+		return zap.FatalLevel
+	default:
+		return zap.Level(n)
+	}
+}
 
 type zapLogger struct {
 	baseLogger
-	logger   zap.Logger
-	zapLevel zap.Level
-	//TODO: Refactor
-	encoder zap.Encoder
-	//TODO: Refactor
-	output zap.WriteSyncer
+	logger zap.Logger
 }
 
 func (l zapLogger) toZapFields(fields ...Field) []zap.Field {
@@ -33,14 +76,6 @@ func (l zapLogger) toZapFields(fields ...Field) []zap.Field {
 		}
 	}
 	return zapFields
-}
-
-func (l *zapLogger) applyOptions(options ...Option) {
-	for _, o := range options {
-		o.apply(l)
-	}
-	//TODO: Refactor
-	l.logger = zap.New(l.encoder, l.zapLevel, zap.Output(l.output))
 }
 
 func (l zapLogger) Debug(message string, fields ...Field) {
@@ -92,14 +127,12 @@ func (l zapLogger) Fatal(message string, fields ...Field) {
 }
 
 func setupZap(loggerConfig *Configuration) error {
-	defaultOptions = append(defaultOptions, loggerConfig.Out)
-	defaultOptions = append(defaultOptions, loggerConfig.Format)
-	defaultOptions = append(defaultOptions, loggerConfig.Level)
+	zapFactory = zap.New(loggerConfig.Format.toZapEncoder(), loggerConfig.Level.toZapLevel(), loggerConfig.Out.toZapOut())
 	return nil
 }
 
 func newZap(options ...Option) Logger {
 	logger := new(zapLogger)
-	logger.applyOptions(append(defaultOptions, options...)...)
+	logger.logger = zapFactory.With()
 	return logger
 }

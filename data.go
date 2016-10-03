@@ -3,10 +3,10 @@ package logger
 import (
 	"errors"
 	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/op/go-logging"
-	"github.com/uber-go/zap"
-	"os"
+	//"github.com/Sirupsen/logrus"
+	//"github.com/op/go-logging"
+	//"github.com/uber-go/zap"
+	//"os"
 )
 
 const (
@@ -61,11 +61,12 @@ func (o Out) String() string {
 	return string(o)
 }
 
+/*
 //Output creates a option for log output
-func (o Out) apply(l Logger) error {
+func (o Out) apply(l Logger) {
 	output, err := getOutput(o)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	//TODO: Refactor
 	switch DefaultConfig.Provider {
@@ -83,25 +84,26 @@ func (o Out) apply(l Logger) error {
 		backEndLeveled.SetLevel(logging.Level(loggingLogger.level), "")
 		loggingLogger.logger.SetBackend(backEndLeveled)
 	}
-	return nil
 }
+*/
 
 // Option is used to set options for the logger.
 type Option interface {
-	apply(Logger) error
+	apply(Logger)
 }
 
 // optionFunc wraps a func so it satisfies the Option interface.
 type optionFunc func(Logger) error
 
-func (f optionFunc) apply(l Logger) error {
-	return f(l)
+func (f optionFunc) apply(l Logger) {
+	f(l)
 }
 
 //Level is the threshold of the logger
 type Level int
 
-func (n Level) apply(l Logger) error {
+/*
+func (n Level) apply(l Logger) {
 	//TODO: Refactor
 	switch DefaultConfig.Provider {
 	case LOGRUS:
@@ -110,20 +112,8 @@ func (n Level) apply(l Logger) error {
 	case ZAP:
 		zapLogger := l.(*zapLogger)
 		zapLogger.level = n
-		switch n {
-		case DEBUG:
-			zapLogger.zapLevel = zap.DebugLevel
-		case INFO:
-			zapLogger.zapLevel = zap.InfoLevel
-		case WARN:
-			zapLogger.zapLevel = zap.WarnLevel
-		case ERROR:
-			zapLogger.zapLevel = zap.ErrorLevel
-		case PANIC:
-			zapLogger.zapLevel = zap.PanicLevel
-		case FATAL:
-			zapLogger.zapLevel = zap.FatalLevel
-		}
+		zapLogger.zapLevel = n.toZapLevel()
+
 	case LOGGING:
 		loggingLogger := l.(*loggingLogger)
 		loggingLogger.level = n
@@ -132,12 +122,12 @@ func (n Level) apply(l Logger) error {
 		backEndLeveled.SetLevel(logging.Level(n), "")
 		loggingLogger.logger.SetBackend(backEndLeveled)
 	}
-	return nil
 }
+*/
 
 // String returns a lower-case ASCII representation of the log level.
-func (l Level) String() string {
-	switch l {
+func (n Level) String() string {
+	switch n {
 	case DEBUG:
 		return "debug"
 	case INFO:
@@ -151,14 +141,15 @@ func (l Level) String() string {
 	case FATAL:
 		return "fatal"
 	default:
-		return fmt.Sprintf("Level(%d)", l)
+		return fmt.Sprintf("Level(%d)", n)
 	}
 }
 
 //Format is a parameter to controle the logger style
 type Format string
 
-func (f Format) apply(l Logger) error {
+/*
+func (f Format) apply(l Logger) {
 	//TODO: Refactor
 	switch DefaultConfig.Provider {
 	case LOGRUS:
@@ -171,15 +162,10 @@ func (f Format) apply(l Logger) error {
 		}
 	case ZAP:
 		zapLogger := l.(*zapLogger)
-		switch f {
-		case JSON:
-			zapLogger.encoder = zap.NewJSONEncoder()
-		default:
-			zapLogger.encoder = zap.NewTextEncoder()
-		}
+		zapLogger.encoder = f.toZapEncoder()
 	}
-	return nil
 }
+*/
 
 //Configuration holds the log beahvior parameters
 type Configuration struct {
@@ -193,6 +179,7 @@ func (l *Configuration) String() string {
 	return fmt.Sprintf("Configuration[Provider=%v Level=%v Format=%v Out=%v]", l.Provider, l.Level, l.Format, l.Out)
 }
 
+/*
 //FileOutput creates a option for file output
 func FileOutput(output *os.File) Option {
 	//TODO: Refactor
@@ -215,6 +202,7 @@ func FileOutput(output *os.File) Option {
 		return nil
 	})
 }
+*/
 
 //Field is a struct to send paramaters to log messages
 type Field struct {

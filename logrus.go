@@ -17,13 +17,6 @@ func (l logrusLogger) toLogrusFields(fields ...Field) logrus.Fields {
 	return logrusFields
 }
 
-func (l *logrusLogger) applyOptions(options ...Option) {
-	l.logger = logrus.New()
-	for _, o := range options {
-		o.apply(l)
-	}
-}
-
 func (l logrusLogger) Debug(message string, fields ...Field) {
 	if len(fields) > 0 {
 		l.logger.WithFields(l.toLogrusFields(fields...)).Debug(message)
@@ -78,21 +71,18 @@ func setupLogrus(loggerConfig *Configuration) error {
 		return err
 	}
 	logrus.SetOutput(output)
-	defaultOptions = append(defaultOptions, loggerConfig.Out)
 	switch loggerConfig.Format {
 	case JSON:
 		logrus.SetFormatter(new(logrus.TextFormatter))
 	default:
 		logrus.SetFormatter(new(logrus.TextFormatter))
 	}
-	defaultOptions = append(defaultOptions, loggerConfig.Format)
 	logrus.SetLevel(logrus.Level(loggerConfig.Level))
-	defaultOptions = append(defaultOptions, loggerConfig.Level)
 	return nil
 }
 
 func newLogrus(options ...Option) Logger {
 	logger := new(logrusLogger)
-	logger.applyOptions(append(defaultOptions, options...)...)
+	logger.logger = logrus.New()
 	return logger
 }

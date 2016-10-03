@@ -12,6 +12,12 @@ import (
 	"testing"
 )
 
+var (
+	myLogrusConfig  = &Configuration{Provider: LOGRUS, Out: DISCARD}
+	myZapConfig     = &Configuration{Provider: ZAP, Out: DISCARD}
+	myLoggingConfig = &Configuration{Provider: LOGGING, Out: DISCARD}
+)
+
 func TestSetupLoggerSuccess(t *testing.T) {
 	cases := []struct {
 		config Configuration
@@ -69,8 +75,7 @@ func logrusTestSetup() {
 }
 
 func myLogrusTestSetup(t assert.TestingT) {
-	config := &Configuration{Provider: LOGRUS, Out: DISCARD}
-	setupErr := Setup(config)
+	setupErr := Setup(myLogrusConfig)
 	assert.Nil(t, setupErr)
 }
 
@@ -93,8 +98,7 @@ func barkifyZapTestSetup(t assert.TestingT) {
 }
 
 func myZapTestSetup(t assert.TestingT) {
-	config := &Configuration{Provider: ZAP, Out: DISCARD}
-	setupErr := Setup(config)
+	setupErr := Setup(myZapConfig)
 	assert.Nil(t, setupErr)
 }
 
@@ -106,8 +110,7 @@ func loggingTestSetup() {
 }
 
 func myLoggingTestSetup(t assert.TestingT) {
-	config := &Configuration{Provider: LOGGING, Out: DISCARD}
-	setupErr := Setup(config)
+	setupErr := Setup(myLoggingConfig)
 	assert.Nil(t, setupErr)
 }
 
