@@ -3,6 +3,7 @@ package logger
 import (
 	"github.com/uber-go/zap"
 	"os"
+	"time"
 )
 
 var (
@@ -60,17 +61,19 @@ type zapLogger struct {
 func (l zapLogger) toZapFields(fields ...Field) []zap.Field {
 	var zapFields []zap.Field
 	for _, v := range fields {
-		switch v.val.(type) {
-		case int:
-			zapFields = append(zapFields, zap.Int(v.key, v.val.(int)))
-		case int64:
+		switch v.valType {
+		case IntField:
 			zapFields = append(zapFields, zap.Int64(v.key, v.val.(int64)))
-		case string:
+		case StringField:
 			zapFields = append(zapFields, zap.String(v.key, v.val.(string)))
-		case bool:
+		case BoolField:
 			zapFields = append(zapFields, zap.Bool(v.key, v.val.(bool)))
-		case float64:
+		case FloatField:
 			zapFields = append(zapFields, zap.Float64(v.key, v.val.(float64)))
+		case DurationField:
+			zapFields = append(zapFields, zap.Duration(v.key, v.val.(time.Duration)))
+		case TimeField:
+			zapFields = append(zapFields, zap.Time(v.key, v.val.(time.Time)))
 		default:
 			zapFields = append(zapFields, zap.Object(v.key, v.val))
 		}

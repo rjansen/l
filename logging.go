@@ -2,12 +2,25 @@ package logger
 
 import (
 	"github.com/op/go-logging"
+	"io"
 )
 
 var (
 	defaultLoggingFormat = "%{time:2006-01-02T15:04:05.999Z-07:00} %{id:03x} [%{level:.5s}] %{shortpkg}.%{longfunc} %{message}"
 	loggingFormatter     = logging.MustStringFormatter(defaultLoggingFormat)
 )
+
+func (f Format) toLoggingFormatter() logging.Formatter {
+	return loggingFormatter
+}
+
+func (o Out) toLogingOut() (io.Writer, error) {
+	return getOutput(o)
+}
+
+func (n Level) toLoggingLevel() logging.Level {
+	return logging.Level(n)
+}
 
 type loggingLogger struct {
 	baseLogger
@@ -71,13 +84,16 @@ func (l loggingLogger) Fatal(message string, fields ...Field) {
 }
 
 func setupLogging(loggerConfig *Configuration) error {
-	output, err := getOutput(loggerConfig.Out)
+	output, err := loggerConfig.Out.toLogingOut()
 	if err != nil {
 		return err
 	}
-	backEndMessages := logging.NewBackendFormatter(logging.NewLogBackend(output, "", 0), loggingFormatter)
+	backEndMessages := logging.NewBackendFormatter(
+		logging.NewLogBackend(output, "", 0),
+		loggerConfig.Format.toLoggingFormatter(),
+	)
 	levelMessages := logging.AddModuleLevel(backEndMessages)
-	levelMessages.SetLevel(logging.Level(loggerConfig.Level), "")
+	levelMessages.SetLevel(loggerConfig.Level.toLoggingLevel(), "")
 	logging.SetBackend(levelMessages)
 	return nil
 }

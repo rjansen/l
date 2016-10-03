@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	myLogrusConfig  = &Configuration{Provider: LOGRUS, Out: DISCARD}
-	myZapConfig     = &Configuration{Provider: ZAP, Out: DISCARD}
-	myLoggingConfig = &Configuration{Provider: LOGGING, Out: DISCARD}
+	myLogrusConfig     = &Configuration{Provider: LOGRUS, Out: DISCARD}
+	myLogrusFmtfConfig = &Configuration{Provider: LOGRUS, Format: LOGRUSFmtfText, Out: DISCARD}
+	myZapConfig        = &Configuration{Provider: ZAP, Out: DISCARD}
+	myLoggingConfig    = &Configuration{Provider: LOGGING, Out: DISCARD}
 )
 
 func TestSetupLoggerSuccess(t *testing.T) {
@@ -79,6 +80,11 @@ func myLogrusTestSetup(t assert.TestingT) {
 	assert.Nil(t, setupErr)
 }
 
+func myLogrusFmtfTestSetup(t assert.TestingT) {
+	setupErr := Setup(myLogrusFmtfConfig)
+	assert.Nil(t, setupErr)
+}
+
 func zapTestSetup(t assert.TestingT) {
 	logger := zap.New(
 		zap.NewTextEncoder(),
@@ -126,6 +132,11 @@ func BenchmarkMySetupLogrusLogger(b *testing.B) {
 	}
 }
 
+func BenchmarkMySetupLogrusFmtfLogger(b *testing.B) {
+	for k := 0; k < b.N; k++ {
+		myLogrusFmtfTestSetup(b)
+	}
+}
 func BenchmarkSetupZapLogger(b *testing.B) {
 	for k := 0; k < b.N; k++ {
 		zapTestSetup(b)
@@ -215,6 +226,17 @@ func BenchmarkMyNewLogrusLogger(b *testing.B) {
 	})
 }
 
+func BenchmarkMyNewLogrusFmtfLogger(b *testing.B) {
+	myLogrusFmtfTestSetup(b)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			myNewLogger(b)
+		}
+	})
+}
+
 func BenchmarkNewZapLogger(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -268,11 +290,12 @@ func BenchmarkMyNewLoggingLogger(b *testing.B) {
 
 func BenchmarkLogrusFormatfLogger(b *testing.B) {
 	logrusTestSetup()
+	logger := logrusNew(b)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logrus.Debugf("BenchamarkLogrusFormat[field1=%v field2=%v field3=%v field4=%v field5=%v field6=%v field7=%v field8=%v field9=%v field0=%v]",
+			logger.Debugf("BenchamarkLogrusFormat[field1=%v field2=%v field3=%v field4=%v field5=%v field6=%v field7=%v field8=%v field9=%v field0=%v]",
 				"field1",
 				"field2",
 				"field3",
@@ -290,11 +313,12 @@ func BenchmarkLogrusFormatfLogger(b *testing.B) {
 
 func BenchmarkLogrusFieldsLogger(b *testing.B) {
 	logrusTestSetup()
+	logger := logrusNew(b)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logrus.WithFields(logrus.Fields{
+			logger.WithFields(logrus.Fields{
 				"field1": "field1",
 				"field2": "field2",
 				"field3": "field3",
@@ -306,6 +330,29 @@ func BenchmarkLogrusFieldsLogger(b *testing.B) {
 				"field9": "field9",
 				"field0": "field0",
 			}).Debug("BenchamarkLogrusFileds")
+		}
+	})
+}
+
+func BenchmarkMyLogrusFmtfLogger(b *testing.B) {
+	myLogrusFmtfTestSetup(b)
+	logger := myNewLogger(b)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Debug("BenchamarkMyLogrusFmtf",
+				String("field1", "field1"),
+				String("field2", "field2"),
+				String("field3", "field3"),
+				String("field4", "field4"),
+				String("field5", "field5"),
+				String("field6", "field6"),
+				String("field7", "field7"),
+				String("field8", "field8"),
+				String("field9", "field9"),
+				String("field0", "field0"),
+			)
 		}
 	})
 }

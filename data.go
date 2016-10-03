@@ -28,6 +28,8 @@ const (
 	TEXT Format = "text"
 	//JSON is the json log format
 	JSON = "json"
+	//LOGRUSFmtfText is the text with the logrus formatf approach
+	LOGRUSFmtfText = "logrusFrmtfText"
 
 	//PANIC is the panic level logger
 	PANIC Level = iota
@@ -41,6 +43,21 @@ const (
 	INFO
 	//DEBUG is the debug level logger
 	DEBUG
+
+	//StringField is a constant for string logger fields
+	StringField FieldType = iota
+	//IntField is a constant for string logger fields
+	IntField
+	//FloatField is a constant for string logger fields
+	FloatField
+	//DurationField is a constant for duration logger fields
+	DurationField
+	//TimeField is a constant for time logger fields
+	TimeField
+	//BoolField is a constant for string logger fields
+	BoolField
+	//StructField is a constant for string logger fields
+	StructField
 )
 
 var (
@@ -204,10 +221,14 @@ func FileOutput(output *os.File) Option {
 }
 */
 
+//FieldType is a type identifier for logger fields
+type FieldType int8
+
 //Field is a struct to send paramaters to log messages
 type Field struct {
-	key string
-	val interface{}
+	key     string
+	val     interface{}
+	valType FieldType
 }
 
 //Logger is an interface to write log messages
