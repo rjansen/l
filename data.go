@@ -13,23 +13,23 @@ const (
 	//STDOUT any message to stdout
 	STDOUT Out = "stdout"
 	//STDERR redirects any message to stderr
-	STDERR = "stderr"
+	STDERR Out = "stderr"
 	//DISCARD set logger to ignore all message
-	DISCARD = "discard"
+	DISCARD Out = "discard"
 
 	//LOGRUS is the github.com/Sirupsen/logrus id
 	LOGRUS Provider = "logrus"
 	//ZAP is the github.com/uber-go/zap id
-	ZAP = "zap"
+	ZAP Provider = "zap"
 	//LOGGING is the github.com/op/go-logging id
-	LOGGING = "logging"
+	LOGGING Provider = "logging"
 
 	//TEXT is the text log format
 	TEXT Format = "text"
 	//JSON is the json log format
-	JSON = "json"
+	JSON Format = "json"
 	//LOGRUSFmtfText is the text with the logrus formatf approach
-	LOGRUSFmtfText = "logrusFrmtfText"
+	LOGRUSFmtfText Format = "logrusFrmtfText"
 
 	//PANIC is the panic level logger
 	PANIC Level = iota
