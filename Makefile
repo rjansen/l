@@ -118,7 +118,7 @@ test:
 
 .PHONY: bench_all
 bench_all:
-	go test -bench=. -v -race 
+	go test -bench=. -benchmen -v -race 
 
 .PHONY: bench
 bench:

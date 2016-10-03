@@ -62,73 +62,209 @@ func TestNewLoggerSuccess(t *testing.T) {
 	}
 }
 
+func logrusTestSetup() {
+	logrus.SetOutput(ioutil.Discard)
+	logrus.SetFormatter(new(logrus.TextFormatter))
+	logrus.SetLevel(logrus.DebugLevel)
+}
+
+func myLogrusTestSetup(t assert.TestingT) {
+	config := &Configuration{Provider: LOGRUS, Out: DISCARD}
+	setupErr := Setup(config)
+	assert.Nil(t, setupErr)
+}
+
+func zapTestSetup(t assert.TestingT) {
+	logger := zap.New(
+		zap.NewTextEncoder(),
+		zap.DebugLevel,
+		zap.DiscardOutput,
+	)
+	assert.NotNil(t, logger)
+}
+
+func barkifyZapTestSetup(t assert.TestingT) {
+	logger := zbark.Barkify(zap.New(
+		zap.NewJSONEncoder(),
+		zap.DebugLevel,
+		zap.DiscardOutput,
+	))
+	assert.NotNil(t, logger)
+}
+
+func myZapTestSetup(t assert.TestingT) {
+	config := &Configuration{Provider: ZAP, Out: DISCARD}
+	setupErr := Setup(config)
+	assert.Nil(t, setupErr)
+}
+
+func loggingTestSetup() {
+	backEndMessages := logging.NewBackendFormatter(logging.NewLogBackend(ioutil.Discard, "", 0), loggingFormatter)
+	levelMessages := logging.AddModuleLevel(backEndMessages)
+	levelMessages.SetLevel(logging.DEBUG, "")
+	logging.SetBackend(levelMessages)
+}
+
+func myLoggingTestSetup(t assert.TestingT) {
+	config := &Configuration{Provider: LOGGING, Out: DISCARD}
+	setupErr := Setup(config)
+	assert.Nil(t, setupErr)
+}
+
 func BenchmarkSetupLogrusLogger(b *testing.B) {
 	for k := 0; k < b.N; k++ {
-		config := &Configuration{Provider: LOGRUS}
-		setupErr := Setup(config)
-		assert.Nil(b, setupErr)
+		logrusTestSetup()
+	}
+}
+
+func BenchmarkMySetupLogrusLogger(b *testing.B) {
+	for k := 0; k < b.N; k++ {
+		myLogrusTestSetup(b)
 	}
 }
 
 func BenchmarkSetupZapLogger(b *testing.B) {
 	for k := 0; k < b.N; k++ {
-		config := &Configuration{Provider: ZAP}
-		setupErr := Setup(config)
-		assert.Nil(b, setupErr)
+		zapTestSetup(b)
+	}
+}
+func BenchmarkSetupBarkifyZapLogger(b *testing.B) {
+	for k := 0; k < b.N; k++ {
+		barkifyZapTestSetup(b)
+	}
+}
+
+func BenchmarkMySetupZapLogger(b *testing.B) {
+	for k := 0; k < b.N; k++ {
+		myZapTestSetup(b)
 	}
 }
 
 func BenchmarkSetupLoggingLogger(b *testing.B) {
 	for k := 0; k < b.N; k++ {
-		config := &Configuration{Provider: LOGGING}
-		setupErr := Setup(config)
-		assert.Nil(b, setupErr)
+		loggingTestSetup()
 	}
 }
 
+func BenchmarkMySetupLoggingLogger(b *testing.B) {
+	for k := 0; k < b.N; k++ {
+		myLoggingTestSetup(b)
+	}
+}
+
+func myNewLogger(t assert.TestingT) Logger {
+	l := NewLogger()
+	assert.NotNil(t, l)
+	return l
+}
+
+func logrusNew(t assert.TestingT) *logrus.Logger {
+	l := logrus.New()
+	assert.NotNil(t, l)
+	return l
+}
+
+func zapNew(t assert.TestingT) zap.Logger {
+	l := zap.New(
+		zap.NewTextEncoder(),
+		zap.DebugLevel,
+		zap.DiscardOutput,
+	)
+	assert.NotNil(t, l)
+	return l
+}
+
+func barkifyZapNew(t assert.TestingT) bark.Logger {
+	l := zbark.Barkify(zap.New(
+		zap.NewJSONEncoder(),
+		zap.DebugLevel,
+		zap.DiscardOutput,
+	))
+	assert.NotNil(t, l)
+	return l
+}
+
+func loggingNew(t assert.TestingT) *logging.Logger {
+	l := logging.MustGetLogger("benchmark")
+	assert.NotNil(t, l)
+	return l
+}
+
 func BenchmarkNewLogrusLogger(b *testing.B) {
-	config := &Configuration{Provider: LOGRUS}
-	setupErr := Setup(config)
-	assert.Nil(b, setupErr)
+	logrusTestSetup()
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			l := NewLogger()
-			assert.NotNil(b, l)
+			logrusNew(b)
+		}
+	})
+}
+
+func BenchmarkMyNewLogrusLogger(b *testing.B) {
+	myLogrusTestSetup(b)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			myNewLogger(b)
 		}
 	})
 }
 
 func BenchmarkNewZapLogger(b *testing.B) {
-	config := &Configuration{Provider: ZAP}
-	setupErr := Setup(config)
-	assert.Nil(b, setupErr)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			l := NewLogger()
-			assert.NotNil(b, l)
+			zapNew(b)
+		}
+	})
+}
+
+func BenchmarkNewBarkifyZapLogger(b *testing.B) {
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			barkifyZapNew(b)
+		}
+	})
+}
+
+func BenchmarkMyNewZapLogger(b *testing.B) {
+	myZapTestSetup(b)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			myNewLogger(b)
 		}
 	})
 }
 
 func BenchmarkNewLoggingLogger(b *testing.B) {
-	config := &Configuration{Provider: LOGGING}
-	setupErr := Setup(config)
-	assert.Nil(b, setupErr)
+	loggingTestSetup()
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			l := NewLogger()
-			assert.NotNil(b, l)
+			loggingNew(b)
+		}
+	})
+}
+
+func BenchmarkMyNewLoggingLogger(b *testing.B) {
+	myLoggingTestSetup(b)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			myNewLogger(b)
 		}
 	})
 }
 
 func BenchmarkLogrusFormatfLogger(b *testing.B) {
-	logrus.SetOutput(ioutil.Discard)
-	logrus.SetFormatter(new(logrus.TextFormatter))
-	logrus.SetLevel(logrus.DebugLevel)
+	logrusTestSetup()
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -150,9 +286,7 @@ func BenchmarkLogrusFormatfLogger(b *testing.B) {
 }
 
 func BenchmarkLogrusFieldsLogger(b *testing.B) {
-	logrus.SetOutput(ioutil.Discard)
-	logrus.SetFormatter(new(logrus.TextFormatter))
-	logrus.SetLevel(logrus.DebugLevel)
+	logrusTestSetup()
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -174,11 +308,8 @@ func BenchmarkLogrusFieldsLogger(b *testing.B) {
 }
 
 func BenchmarkMyLogrusFieldsLogger(b *testing.B) {
-	setupErr := Setup(&Configuration{Provider: LOGRUS, Out: DISCARD})
-	assert.Nil(b, setupErr)
-	assert.Nil(b, setupErr)
-	logger := NewLogger()
-	assert.NotNil(b, logger)
+	myLogrusTestSetup(b)
+	logger := myNewLogger(b)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -200,11 +331,8 @@ func BenchmarkMyLogrusFieldsLogger(b *testing.B) {
 }
 
 func BenchmarkZapLogger(b *testing.B) {
-	logger := zap.New(
-		zap.NewTextEncoder(),
-		zap.DebugLevel,
-		zap.DiscardOutput,
-	)
+	logger := zapNew(b)
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -225,11 +353,8 @@ func BenchmarkZapLogger(b *testing.B) {
 }
 
 func BenchmarkZapBarkifyLogger(b *testing.B) {
-	logger := zbark.Barkify(zap.New(
-		zap.NewJSONEncoder(),
-		zap.DebugLevel,
-		zap.DiscardOutput,
-	))
+	logger := barkifyZapNew(b)
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -250,10 +375,8 @@ func BenchmarkZapBarkifyLogger(b *testing.B) {
 }
 
 func BenchmarkMyZapLogger(b *testing.B) {
-	setupErr := Setup(&Configuration{Provider: ZAP, Out: DISCARD})
-	assert.Nil(b, setupErr)
-	logger := NewLogger()
-	assert.NotNil(b, logger)
+	myZapTestSetup(b)
+	logger := myNewLogger(b)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -275,15 +398,12 @@ func BenchmarkMyZapLogger(b *testing.B) {
 }
 
 func BenchmarkLoggingFormatfLogger(b *testing.B) {
-	backEndMessages := logging.NewBackendFormatter(logging.NewLogBackend(ioutil.Discard, "", 0), loggingFormatter)
-	levelMessages := logging.AddModuleLevel(backEndMessages)
-	levelMessages.SetLevel(logging.DEBUG, "")
-	logging.SetBackend(levelMessages)
+	logrusTestSetup()
+	logger := loggingNew(b)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger := logging.MustGetLogger("benchmark")
 			logger.Debugf("BenchamarkLogging[field1=%v field2=%v field3=%v field4=%v field5=%v field6=%v field7=%v field8=%v field9=%v field0=%v]",
 				"field1",
 				"field2",
@@ -301,10 +421,8 @@ func BenchmarkLoggingFormatfLogger(b *testing.B) {
 }
 
 func BenchmarkMyLoggingFormatfLogger(b *testing.B) {
-	setupErr := Setup(&Configuration{Provider: LOGGING, Out: DISCARD})
-	assert.Nil(b, setupErr)
-	logger := NewLogger()
-	assert.NotNil(b, logger)
+	myLoggingTestSetup(b)
+	logger := myNewLogger(b)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
