@@ -183,10 +183,10 @@ func (f Format) apply(l Logger) error {
 
 //Configuration holds the log beahvior parameters
 type Configuration struct {
-	Provider Provider `mapstructure:"logger_provider"`
-	Level    Level    `mapstructure:"logger_level"`
-	Format   Format   `mapstructure:"logger_format"`
-	Out      Out      `mapstructure:"logger_out"`
+	Provider Provider `json:"provider" mapstructure:"provider"`
+	Level    Level    `json:"level" mapstructure:"level"`
+	Format   Format   `json:"format" mapstructure:"format"`
+	Out      Out      `json:"out" mapstructure:"out"`
 }
 
 func (l *Configuration) String() string {
