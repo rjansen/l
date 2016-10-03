@@ -78,7 +78,7 @@ func setupLogrus(loggerConfig *Configuration) error {
 		return err
 	}
 	logrus.SetOutput(output)
-	//defaultOptions = append(defaultOptions, loggerConfig.Out)
+	defaultOptions = append(defaultOptions, loggerConfig.Out)
 	switch loggerConfig.Format {
 	case JSON:
 		logrus.SetFormatter(new(logrus.TextFormatter))

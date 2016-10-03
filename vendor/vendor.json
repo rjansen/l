@@ -9,10 +9,42 @@
 			"revisionTime": "2016-08-29T20:23:21Z"
 		},
 		{
+			"checksumSHA1": "+Kx5pjpSFl3wdwEG2NYYTsbsV/Y=",
+			"path": "github.com/cactus/go-statsd-client/statsd",
+			"revision": "1c27c506c7a0584d017ca479f91b88d6a6538332",
+			"revisionTime": "2016-08-20T08:06:51Z"
+		},
+		{
+			"checksumSHA1": "5rPfda8jFccr3A6heL+JAmi9K9g=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/davecgh/go-spew/spew",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "6fe211e493929a8aac0469b93f28b1d0688a9a3a",
+			"revisionTime": "2016-03-05T16:54:46Z"
+		},
+		{
 			"checksumSHA1": "BoXdUBWB8UnSlFlbnuTQaPqfCGk=",
 			"path": "github.com/op/go-logging",
 			"revision": "970db520ece77730c7e4724c61121037378659d9",
 			"revisionTime": "2016-03-15T20:05:05Z"
+		},
+		{
+			"checksumSHA1": "zKKp5SZ3d3ycKe4EKMNT0BqAWBw=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/pmezard/go-difflib/difflib",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "6fe211e493929a8aac0469b93f28b1d0688a9a3a",
+			"revisionTime": "2016-03-05T16:54:46Z"
+		},
+		{
+			"checksumSHA1": "Bn333k9lTndxU3D6n/G5c+GMcYY=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "6fe211e493929a8aac0469b93f28b1d0688a9a3a",
+			"revisionTime": "2016-03-05T16:54:46Z"
+		},
+		{
+			"checksumSHA1": "I5ucnqO5cC73H9o1KhhWkfnLNfM=",
+			"path": "github.com/uber-common/bark",
+			"revision": "8841a0f8e7ca869284ccb29c08a14cf3f4310f46",
+			"revisionTime": "2016-06-24T22:54:29Z"
 		},
 		{
 			"checksumSHA1": "Qb0eMcC9P6tYLT4KNLvNNmvhPr4=",
@@ -23,6 +55,18 @@
 		{
 			"checksumSHA1": "j+wWJzvcoh8tITqZSTW/9iXUHBg=",
 			"path": "github.com/uber-go/zap",
+			"revision": "c4939d1166b2220bb45338e21506623b4bbdec50",
+			"revisionTime": "2016-09-29T23:02:16Z"
+		},
+		{
+			"checksumSHA1": "Vz5XrCHsEGl9lRd/JJ2mea9eq4s=",
+			"path": "github.com/uber-go/zap/zbark",
+			"revision": "c4939d1166b2220bb45338e21506623b4bbdec50",
+			"revisionTime": "2016-09-29T23:02:16Z"
+		},
+		{
+			"checksumSHA1": "2og9VngFqqkupJCGTOwacLB7TZM=",
+			"path": "github.com/uber-go/zap/zwrap",
 			"revision": "c4939d1166b2220bb45338e21506623b4bbdec50",
 			"revisionTime": "2016-09-29T23:02:16Z"
 		}

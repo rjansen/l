@@ -4,7 +4,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/op/go-logging"
 	"github.com/stretchr/testify/assert"
+	"github.com/uber-common/bark"
 	"github.com/uber-go/zap"
+	"github.com/uber-go/zap/zbark"
 	"io/ioutil"
 	//"os"
 	"testing"
@@ -123,7 +125,7 @@ func BenchmarkNewLoggingLogger(b *testing.B) {
 	})
 }
 
-func BenchmarkLogrusFromatfLogger(b *testing.B) {
+func BenchmarkLogrusFormatfLogger(b *testing.B) {
 	logrus.SetOutput(ioutil.Discard)
 	logrus.SetFormatter(new(logrus.TextFormatter))
 	logrus.SetLevel(logrus.DebugLevel)
@@ -131,7 +133,7 @@ func BenchmarkLogrusFromatfLogger(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logrus.Debugf("BenchaMarkLogrusFormat[field1=%v field2=%v field3=%v field4=%v field5=%v field6=%v field7=%v field8=%v field9=%v field0=%v]",
+			logrus.Debugf("BenchamarkLogrusFormat[field1=%v field2=%v field3=%v field4=%v field5=%v field6=%v field7=%v field8=%v field9=%v field0=%v]",
 				"field1",
 				"field2",
 				"field3",
@@ -166,21 +168,46 @@ func BenchmarkLogrusFieldsLogger(b *testing.B) {
 				"field8": "field8",
 				"field9": "field9",
 				"field0": "field0",
-			}).Debug("BenchaMarkLogrusFileds")
+			}).Debug("BenchamarkLogrusFileds")
+		}
+	})
+}
+
+func BenchmarkMyLogrusFieldsLogger(b *testing.B) {
+	setupErr := Setup(&Configuration{Provider: LOGRUS, Out: DISCARD})
+	assert.Nil(b, setupErr)
+	logger := NewLogger()
+	assert.NotNil(b, logger)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Debug("BenchamarkMyLogrusFileds",
+				Field{"field1", "field1"},
+				Field{"field2", "field2"},
+				Field{"field3", "field3"},
+				Field{"field4", "field4"},
+				Field{"field5", "field5"},
+				Field{"field6", "field6"},
+				Field{"field7", "field7"},
+				Field{"field8", "field8"},
+				Field{"field9", "field9"},
+				Field{"field0", "field0"},
+			)
 		}
 	})
 }
 
 func BenchmarkZapLogger(b *testing.B) {
 	logger := zap.New(
-		zap.NewJSONEncoder(),
+		zap.NewTextEncoder(),
 		zap.DebugLevel,
 		zap.DiscardOutput,
 	)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Debug("BenchaMarkZap",
+			logger.Debug("BenchamarkZap",
 				zap.String("field1", "field1"),
 				zap.String("field2", "field2"),
 				zap.String("field3", "field3"),
@@ -196,17 +223,67 @@ func BenchmarkZapLogger(b *testing.B) {
 	})
 }
 
-func BenchmarkLoggingFromatfLogger(b *testing.B) {
+func BenchmarkZapBarkifyLogger(b *testing.B) {
+	logger := zbark.Barkify(zap.New(
+		zap.NewJSONEncoder(),
+		zap.DebugLevel,
+		zap.DiscardOutput,
+	))
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.WithFields(bark.Fields{
+				"field1": "field1",
+				"field2": "field2",
+				"field3": "field3",
+				"field4": "field4",
+				"field5": "field5",
+				"field6": "field6",
+				"field7": "field7",
+				"field8": "field8",
+				"field9": "field9",
+				"field0": "field0",
+			}).Info("BenchamarkBarkifiedZap")
+		}
+	})
+}
+
+func BenchmarkMyZapLogger(b *testing.B) {
+	setupErr := Setup(&Configuration{Provider: ZAP, Out: DISCARD})
+	assert.Nil(b, setupErr)
+	logger := NewLogger()
+	assert.NotNil(b, logger)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Debug("BenchamarkMyZap",
+				Field{"field1", "field1"},
+				Field{"field2", "field2"},
+				Field{"field3", "field3"},
+				Field{"field4", "field4"},
+				Field{"field5", "field5"},
+				Field{"field6", "field6"},
+				Field{"field7", "field7"},
+				Field{"field8", "field8"},
+				Field{"field9", "field9"},
+				Field{"field0", "field0"},
+			)
+		}
+	})
+}
+
+func BenchmarkLoggingFormatfLogger(b *testing.B) {
 	backEndMessages := logging.NewBackendFormatter(logging.NewLogBackend(ioutil.Discard, "", 0), loggingFormatter)
 	levelMessages := logging.AddModuleLevel(backEndMessages)
 	levelMessages.SetLevel(logging.DEBUG, "")
 	logging.SetBackend(levelMessages)
 
-	logger := logging.MustGetLogger("benchmark")
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Debugf("BenchaMarkLogrusFormat[field1=%v field2=%v field3=%v field4=%v field5=%v field6=%v field7=%v field8=%v field9=%v field0=%v]",
+			logger := logging.MustGetLogger("benchmark")
+			logger.Debugf("BenchamarkLogging[field1=%v field2=%v field3=%v field4=%v field5=%v field6=%v field7=%v field8=%v field9=%v field0=%v]",
 				"field1",
 				"field2",
 				"field3",
@@ -217,6 +294,31 @@ func BenchmarkLoggingFromatfLogger(b *testing.B) {
 				"field8",
 				"field9",
 				"field0",
+			)
+		}
+	})
+}
+
+func BenchmarkMyLoggingFormatfLogger(b *testing.B) {
+	setupErr := Setup(&Configuration{Provider: LOGGING, Out: DISCARD})
+	assert.Nil(b, setupErr)
+	logger := NewLogger()
+	assert.NotNil(b, logger)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Debug("BenchamarkMyLogging",
+				Field{"field1", "field1"},
+				Field{"field2", "field2"},
+				Field{"field3", "field3"},
+				Field{"field4", "field4"},
+				Field{"field5", "field5"},
+				Field{"field6", "field6"},
+				Field{"field7", "field7"},
+				Field{"field8", "field8"},
+				Field{"field9", "field9"},
+				Field{"field0", "field0"},
 			)
 		}
 	})

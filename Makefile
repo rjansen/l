@@ -124,11 +124,11 @@ bench_all:
 bench:
 	@if [ "$(TEST_PKGS)" == "" ]; then \
 	    echo "Bench All Pkgs" ;\
-		go test -bench=. -v -race || exit 501;\
+		go test -bench=. -benchmem -v -race || exit 501;\
 	else \
 	    echo "Test Selected Pkgs=$(TEST_PKGS)" ;\
 	    for tstpkg in $(TEST_PKGS); do \
-		    go test -bench=. -v -race $(REPO)/$$tstpkg || exit 501;\
+		    go test -bench=. -benchmem -v -race $(REPO)/$$tstpkg || exit 501;\
 		done; \
 	fi
 
