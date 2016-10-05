@@ -118,19 +118,30 @@ test:
 
 .PHONY: bench_all
 bench_all:
-	go test -bench=. -benchmen -v -race 
+	go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem
 
 .PHONY: bench
 bench:
 	@if [ "$(TEST_PKGS)" == "" ]; then \
 	    echo "Bench All Pkgs" ;\
-		go test -bench=. -benchmem -v -race || exit 501;\
+		go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem || exit 501;\
 	else \
 	    echo "Test Selected Pkgs=$(TEST_PKGS)" ;\
 	    for tstpkg in $(TEST_PKGS); do \
-		    go test -bench=. -benchmem -v -race $(REPO)/$$tstpkg || exit 501;\
+		    go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $(REPO)/$$tstpkg || exit 501;\
 		done; \
 	fi
+
+#BENCH_FLAGS ?= -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem
+#PKGS ?= $(shell glide novendor)
+## Many Go tools take file globs or directories as arguments instead of packages.
+#PKG_FILES ?= *.go spy benchmarks zwrap zbark testutils
+
+#.PHONY: bench
+#BENCH ?= .
+#bench:
+#	@$(foreach pkg,$(PKGS),go test -bench=$(BENCH) -run="^$$" $(BENCH_FLAGS) $(pkg);)
+
 
 .PHONY: coverage
 coverage:

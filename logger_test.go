@@ -9,7 +9,9 @@ import (
 	"github.com/uber-go/zap/zbark"
 	"io/ioutil"
 	//"os"
+	"errors"
 	"testing"
+	"time"
 )
 
 var (
@@ -180,7 +182,8 @@ func logrusNew(t assert.TestingT) *logrus.Logger {
 
 func zapNew(t assert.TestingT) zap.Logger {
 	l := zap.New(
-		zap.NewTextEncoder(),
+		zap.NewJSONEncoder(),
+		//zap.NewTextEncoder(),
 		zap.DebugLevel,
 		zap.DiscardOutput,
 	)
@@ -380,24 +383,78 @@ func BenchmarkMyLogrusFieldsLogger(b *testing.B) {
 	})
 }
 
+func createZapFields() []zap.Field {
+	return []zap.Field{
+		zap.String("field1", "field1"),
+		zap.String("field2", "field2"),
+		zap.String("field3", "field3"),
+		zap.String("field4", "field4"),
+		zap.String("field5", "field5"),
+		zap.String("field6", "field6"),
+		zap.String("field7", "field7"),
+		zap.String("field8", "field8"),
+		zap.String("field9", "field9"),
+		zap.String("field0", "field0"),
+	}
+}
+
 func BenchmarkZapLogger(b *testing.B) {
 	logger := zapNew(b)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Debug("BenchamarkZap",
-				zap.String("field1", "field1"),
-				zap.String("field2", "field2"),
-				zap.String("field3", "field3"),
-				zap.String("field4", "field4"),
-				zap.String("field5", "field5"),
-				zap.String("field6", "field6"),
-				zap.String("field7", "field7"),
-				zap.String("field8", "field8"),
-				zap.String("field9", "field9"),
-				zap.String("field0", "field0"),
-			)
+			logger.Info("BenchamarkZap", createZapFields()...)
+		}
+	})
+}
+
+var errExample = errors.New("fail")
+
+type user struct {
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (u user) MarshalLog(kv zap.KeyValue) error {
+	kv.AddString("name", u.Name)
+	kv.AddString("email", u.Email)
+	kv.AddInt64("created_at", u.CreatedAt.UnixNano())
+	return nil
+}
+
+var _jane = user{
+	Name:      "Jane Doe",
+	Email:     "jane@test.com",
+	CreatedAt: time.Date(1980, 1, 1, 12, 0, 0, 0, time.UTC),
+}
+
+func fakeFields() []zap.Field {
+	return []zap.Field{
+		zap.Int("int", 1),
+		zap.Int64("int64", 2),
+		zap.Float64("float", 3.0),
+		zap.String("string", "four!"),
+		zap.Bool("bool", true),
+		zap.Time("time", time.Unix(0, 0)),
+		zap.Error(errExample),
+		zap.Duration("duration", time.Second),
+		zap.Marshaler("user-defined type", _jane),
+		zap.String("another string", "done!"),
+	}
+}
+
+func BenchmarkZapAddingFields(b *testing.B) {
+	logger := zap.New(
+		zap.NewJSONEncoder(),
+		zap.DebugLevel,
+		zap.DiscardOutput,
+	)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Info("Go fast.", fakeFields()...)
 		}
 	})
 }
