@@ -3,10 +3,7 @@ package logger
 import (
 	"errors"
 	"fmt"
-	//"github.com/Sirupsen/logrus"
-	//"github.com/op/go-logging"
-	//"github.com/uber-go/zap"
-	//"os"
+	"strings"
 )
 
 const (
@@ -21,13 +18,15 @@ const (
 	LOGRUS Provider = "logrus"
 	//ZAP is the github.com/uber-go/zap id
 	ZAP Provider = "zap"
-	//LOGGING is the github.com/op/go-logging id
-	LOGGING Provider = "logging"
 
 	//TEXT is the text log format
 	TEXT Format = "text"
+	//TEXTColor is the text log format with color
+	TEXTColor Format = "text_color"
 	//JSON is the json log format
 	JSON Format = "json"
+	//JSONColor is the json log format with color
+	JSONColor Format = "json_color"
 	//LOGRUSFmtfText is the text with the logrus formatf approach
 	LOGRUSFmtfText Format = "logrusFrmtfText"
 
@@ -48,8 +47,12 @@ const (
 	StringField FieldType = iota
 	//IntField is a constant for string logger fields
 	IntField
+	//Int64Field is a constant for string logger fields
+	Int64Field
 	//FloatField is a constant for string logger fields
 	FloatField
+	//Float64Field is a constant for string logger fields
+	Float64Field
 	//DurationField is a constant for duration logger fields
 	DurationField
 	//TimeField is a constant for time logger fields
@@ -58,18 +61,29 @@ const (
 	BoolField
 	//StructField is a constant for string logger fields
 	StructField
+	//ErrorField is a constant for error logger fields
+	ErrorField
 )
 
 var (
 	//ErrInvalidProvider is the err raised when an invalid provider was select
-	ErrInvalidProvider = errors.New("Logger.InvalidProvider[Message='Avaible providers are: LOGRUS, ZAP and LOGGING']")
+	ErrInvalidProvider = errors.New("Logger.InvalidProvider[Message='Avaible providers are: LOGRUS and ZAP']")
 	//DefaultConfig holds the instance of the behavior parameters
-	DefaultConfig  *Configuration
-	defaultOptions []Option
+	DefaultConfig *Configuration
 )
 
 //Provider is the back end implementor id of the logging feature
 type Provider string
+
+func (p Provider) String() string {
+	return string(p)
+}
+
+// Set is a utility method for flag system usage
+func (p *Provider) Set(value string) error {
+	*p = Provider(value)
+	return nil
+}
 
 //Out is the type for logger writer config
 type Out string
@@ -78,31 +92,24 @@ func (o Out) String() string {
 	return string(o)
 }
 
-/*
-//Output creates a option for log output
-func (o Out) apply(l Logger) {
-	output, err := getOutput(o)
-	if err != nil {
-		panic(err)
-	}
-	//TODO: Refactor
-	switch DefaultConfig.Provider {
-	case LOGRUS:
-		logrusLogger := l.(*logrusLogger)
-		logrusLogger.logger.Out = output
-	case ZAP:
-		zapLogger := l.(*zapLogger)
-		zapLogger.output = zap.AddSync(output)
-	case LOGGING:
-		loggingLogger := l.(*loggingLogger)
-		loggingLogger.output = output
-		backEnd := logging.NewBackendFormatter(logging.NewLogBackend(loggingLogger.output, "", 0), loggingFormatter)
-		backEndLeveled := logging.AddModuleLevel(backEnd)
-		backEndLeveled.SetLevel(logging.Level(loggingLogger.level), "")
-		loggingLogger.logger.SetBackend(backEndLeveled)
-	}
+// Set is a utility method for flag system usage
+func (o *Out) Set(value string) error {
+	*o = Out(value)
+	return nil
 }
-*/
+
+//Hooks is the type to configure an create hooks for the logger implementation
+type Hooks string
+
+func (h Hooks) String() string {
+	return string(h)
+}
+
+// Set is a utility method for flag system usage
+func (h *Hooks) Set(value string) error {
+	*h = Hooks(strings.TrimSpace(value))
+	return nil
+}
 
 // Option is used to set options for the logger.
 type Option interface {
@@ -118,29 +125,6 @@ func (f optionFunc) apply(l Logger) {
 
 //Level is the threshold of the logger
 type Level int
-
-/*
-func (n Level) apply(l Logger) {
-	//TODO: Refactor
-	switch DefaultConfig.Provider {
-	case LOGRUS:
-		logrusLogger := l.(*logrusLogger)
-		logrusLogger.logger.Level = logrus.Level(n)
-	case ZAP:
-		zapLogger := l.(*zapLogger)
-		zapLogger.level = n
-		zapLogger.zapLevel = n.toZapLevel()
-
-	case LOGGING:
-		loggingLogger := l.(*loggingLogger)
-		loggingLogger.level = n
-		backEnd := logging.NewBackendFormatter(logging.NewLogBackend(loggingLogger.output, "", 0), loggingFormatter)
-		backEndLeveled := logging.AddModuleLevel(backEnd)
-		backEndLeveled.SetLevel(logging.Level(n), "")
-		loggingLogger.logger.SetBackend(backEndLeveled)
-	}
-}
-*/
 
 // String returns a lower-case ASCII representation of the log level.
 func (n Level) String() string {
@@ -162,27 +146,39 @@ func (n Level) String() string {
 	}
 }
 
+// Set is a utility method for flag system usage
+func (l *Level) Set(value string) error {
+	switch value {
+	case "debug":
+		*l = DEBUG
+	case "info":
+		*l = INFO
+	case "warn":
+		*l = WARN
+	case "error":
+		*l = ERROR
+	case "panic":
+		*l = PANIC
+	case "fatal":
+		*l = FATAL
+	default:
+		*l = FATAL
+	}
+	return nil
+}
+
 //Format is a parameter to controle the logger style
 type Format string
 
-/*
-func (f Format) apply(l Logger) {
-	//TODO: Refactor
-	switch DefaultConfig.Provider {
-	case LOGRUS:
-		logrusLogger := l.(*logrusLogger)
-		switch f {
-		case JSON:
-			logrusLogger.logger.Formatter = new(logrus.JSONFormatter)
-		default:
-			logrusLogger.logger.Formatter = new(logrus.TextFormatter)
-		}
-	case ZAP:
-		zapLogger := l.(*zapLogger)
-		zapLogger.encoder = f.toZapEncoder()
-	}
+func (f Format) String() string {
+	return string(f)
 }
-*/
+
+// Set is a utility method for flag system usage
+func (f *Format) Set(value string) error {
+	*f = Format(value)
+	return nil
+}
 
 //Configuration holds the log beahvior parameters
 type Configuration struct {
@@ -190,36 +186,12 @@ type Configuration struct {
 	Level    Level    `json:"level" mapstructure:"level"`
 	Format   Format   `json:"format" mapstructure:"format"`
 	Out      Out      `json:"out" mapstructure:"out"`
+	Hooks    Hooks    `json:"hooks" mapstructure:"hooks"`
 }
 
 func (l *Configuration) String() string {
-	return fmt.Sprintf("Configuration[Provider=%v Level=%v Format=%v Out=%v]", l.Provider, l.Level, l.Format, l.Out)
+	return fmt.Sprintf("Configuration[Provider=%s Level=%s Format=%s Out=%s Hooks=%s]", l.Provider, l.Level, l.Format, l.Out, l.Hooks)
 }
-
-/*
-//FileOutput creates a option for file output
-func FileOutput(output *os.File) Option {
-	//TODO: Refactor
-	return optionFunc(func(l Logger) error {
-		switch DefaultConfig.Provider {
-		case LOGRUS:
-			logrusLogger := l.(*logrusLogger)
-			logrusLogger.logger.Out = output
-		case ZAP:
-			zapLogger := l.(*zapLogger)
-			zapLogger.output = output
-		case LOGGING:
-			loggingLogger := l.(*loggingLogger)
-			loggingLogger.output = output
-			backEnd := logging.NewBackendFormatter(logging.NewLogBackend(loggingLogger.output, "", 0), loggingFormatter)
-			backEndLeveled := logging.AddModuleLevel(backEnd)
-			backEndLeveled.SetLevel(logging.Level(loggingLogger.level), "")
-			loggingLogger.logger.SetBackend(backEndLeveled)
-		}
-		return nil
-	})
-}
-*/
 
 //FieldType is a type identifier for logger fields
 type FieldType int8

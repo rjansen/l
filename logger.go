@@ -9,11 +9,12 @@ import (
 )
 
 var (
-	loggerFactory func(...Option) Logger
+	loggerFactory func(Configuration) Logger
+	rootLogger    Logger
 )
 
 //Setup initializes the logger system
-func Setup(loggerConfig *Configuration) error {
+func Setup(loggerConfig Configuration) error {
 	if loggerConfig.Level == Level(0) {
 		loggerConfig.Level = DEBUG
 	}
@@ -29,41 +30,33 @@ func Setup(loggerConfig *Configuration) error {
 		setupErr = setupLogrus(loggerConfig)
 	case ZAP:
 		setupErr = setupZap(loggerConfig)
-	case LOGGING:
-		setupErr = setupLogging(loggerConfig)
 	default:
 		setupErr = ErrInvalidProvider
 	}
 	if setupErr != nil {
 		return setupErr
 	}
-	DefaultConfig = loggerConfig
-	switch DefaultConfig.Provider {
-	case LOGRUS:
-		loggerFactory = newLogrus
-	case LOGGING:
-		loggerFactory = newLogging
-	default:
-		loggerFactory = newZap
-	}
+	rootLogger = loggerFactory(loggerConfig)
+	DefaultConfig = &loggerConfig
 	return nil
 }
 
 //GetLogger gets an implemetor of the configured log provider
-func GetLogger(module string) Logger {
-	switch DefaultConfig.Provider {
-	case LOGRUS:
-		return newLogrus()
-	case LOGGING:
-		return newLogging()
-	default:
-		return newZap()
-	}
+func GetLogger() Logger {
+	//if rootLogger == nil {
+	//	rootLogger = NewLogger()
+	//}
+	return rootLogger
 }
 
-//NewLogger creates an implemetor of the configured log provider with the provided options + default options
-func NewLogger(options ...Option) Logger {
-	return loggerFactory(options...)
+//NewLogger creates a logger implemetor with the default configuration
+func NewLogger() Logger {
+	return loggerFactory(*DefaultConfig)
+}
+
+//NewLoggerByConfig creates a logger implemetor with the provided configuration
+func NewLoggerByConfig(config Configuration) Logger {
+	return loggerFactory(config)
 }
 
 func getOutput(out Out) (io.Writer, error) {
@@ -91,8 +84,16 @@ func Int(key string, val int) Field {
 	return Field{key: key, val: val, valType: IntField}
 }
 
-func Float(key string, val float64) Field {
+func Int64(key string, val int64) Field {
+	return Field{key: key, val: val, valType: Int64Field}
+}
+
+func Float(key string, val float32) Field {
 	return Field{key: key, val: val, valType: FloatField}
+}
+
+func Float64(key string, val float64) Field {
+	return Field{key: key, val: val, valType: Float64Field}
 }
 
 func Bool(key string, val bool) Field {
@@ -109,4 +110,8 @@ func Time(key string, val time.Time) Field {
 
 func Struct(key string, val interface{}) Field {
 	return Field{key: key, val: val, valType: StructField}
+}
+
+func Error(val error) Field {
+	return Field{key: "error", val: val, valType: ErrorField}
 }
