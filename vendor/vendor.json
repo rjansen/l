@@ -9,6 +9,12 @@
 			"revisionTime": "2016-08-29T20:23:21Z"
 		},
 		{
+			"checksumSHA1": "63vHVSiItUfflK3tUwe6mrI84BQ=",
+			"path": "github.com/Sirupsen/logrus/hooks/syslog",
+			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
+			"revisionTime": "2016-08-29T20:23:21Z"
+		},
+		{
 			"checksumSHA1": "+Kx5pjpSFl3wdwEG2NYYTsbsV/Y=",
 			"path": "github.com/cactus/go-statsd-client/statsd",
 			"revision": "1c27c506c7a0584d017ca479f91b88d6a6538332",
@@ -69,6 +75,12 @@
 			"path": "github.com/uber-go/zap/zwrap",
 			"revision": "c4939d1166b2220bb45338e21506623b4bbdec50",
 			"revisionTime": "2016-09-29T23:02:16Z"
+		},
+		{
+			"checksumSHA1": "u4rtURsE9Cn7TK4OPwH8axBMK6M=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "8d1157a435470616f975ff9bb013bea8d0962067",
+			"revisionTime": "2016-10-06T02:47:49Z"
 		}
 	],
 	"rootPath": "farm.e-pedion.com/repo/logger"
