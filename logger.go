@@ -17,7 +17,9 @@ var (
 
 //Setup initializes the logger system
 func Setup(loggerConfig Configuration) error {
-	fmt.Printf("logger.Setup config=%+v\n", loggerConfig)
+	if loggerConfig.Debug {
+		fmt.Printf("logger.Setup config=%+v\n", loggerConfig)
+	}
 	if loggerConfig.Level == Level(0) {
 		loggerConfig.Level = DEBUG
 	}
@@ -59,16 +61,17 @@ func Get() Logger {
 
 //GetLogger gets an implemetor of the configured log provider
 func GetLogger() Logger {
-	//if rootLogger == nil {
-	//	rootLogger = NewLogger()
-	//}
-	fmt.Printf("logger.GetLogger rootLogger=%+v\n", rootLogger)
+	if rootLogger == nil {
+		fmt.Printf("logger.GetLogger rootLogger=%+v\n", rootLogger)
+	}
 	return rootLogger
 }
 
 //NewLogger creates a logger implemetor with the default configuration
 func NewLogger() Logger {
-	fmt.Printf("logger.New config=%+v\n", DefaultConfig)
+	if DefaultConfig.Debug {
+		fmt.Printf("logger.New config=%+v\n", DefaultConfig)
+	}
 	return loggerFactory(*DefaultConfig)
 }
 
