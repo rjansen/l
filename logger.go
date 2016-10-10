@@ -5,16 +5,19 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sync"
 	"time"
 )
 
 var (
+	once          sync.Once
 	loggerFactory func(Configuration) Logger
 	rootLogger    Logger
 )
 
 //Setup initializes the logger system
 func Setup(loggerConfig Configuration) error {
+	fmt.Printf("logger.Setup config=%+v\n", loggerConfig)
 	if loggerConfig.Level == Level(0) {
 		loggerConfig.Level = DEBUG
 	}
@@ -41,22 +44,42 @@ func Setup(loggerConfig Configuration) error {
 	return nil
 }
 
+//Get gets an implemetor of the configured log provider
+func Get() Logger {
+	// once.Do(func() {
+	// if rootLogger == nil {
+	// 	rootLogger = NewLoggerByConfig(Configuration{})
+	// }
+	// })
+	if rootLogger == nil {
+		return NewLoggerByConfig(Configuration{Provider: LOGRUS})
+	}
+	return rootLogger
+}
+
 //GetLogger gets an implemetor of the configured log provider
 func GetLogger() Logger {
 	//if rootLogger == nil {
 	//	rootLogger = NewLogger()
 	//}
+	fmt.Printf("logger.GetLogger rootLogger=%+v\n", rootLogger)
 	return rootLogger
 }
 
 //NewLogger creates a logger implemetor with the default configuration
 func NewLogger() Logger {
+	fmt.Printf("logger.New config=%+v\n", DefaultConfig)
 	return loggerFactory(*DefaultConfig)
 }
 
 //NewLoggerByConfig creates a logger implemetor with the provided configuration
 func NewLoggerByConfig(config Configuration) Logger {
-	return loggerFactory(config)
+	switch config.Provider {
+	case ZAP:
+		return newZap(config)
+	default:
+		return newLogrus(config)
+	}
 }
 
 func getOutput(out Out) (io.Writer, error) {
@@ -78,6 +101,10 @@ func getOutput(out Out) (io.Writer, error) {
 
 func String(key, val string) Field {
 	return Field{key: key, val: val, valType: StringField}
+}
+
+func Bytes(key string, val []byte) Field {
+	return Field{key: key, val: val, valType: BytesField}
 }
 
 func Int(key string, val int) Field {

@@ -27,17 +27,23 @@ func (o Out) toLogrusOut() (io.Writer, error) {
 	return getOutput(o)
 }
 
-func (n Level) toLogrusLevel() logrus.Level {
-	return logrus.DebugLevel
+func (n Level) toLogrusLevel() (logrus.Level, error) {
+	return logrus.ParseLevel(n.String())
 }
 
 func (h Hooks) toLogrusSyslogHook() (*logrus_syslog.SyslogHook, error) {
-	//hook, err := logrus_syslog.NewSyslogHook("udp", "127.0.0.1:514", syslog.LOG_DEBUG, "glive")
-	hook, err := logrus_syslog.NewSyslogHook("udp", "localhost:514", syslog.LOG_DEBUG, "")
-	if err != nil {
-		return nil, err
+	hookName := string(h)
+	switch hookName {
+	case "syslog":
+		//hook, err := logrus_syslog.NewSyslogHook("udp", "127.0.0.1:514", syslog.LOG_DEBUG, "glive")
+		hook, err := logrus_syslog.NewSyslogHook("udp", "127.0.0.1:514", syslog.LOG_DEBUG, "glive")
+		if err != nil {
+			return nil, err
+		}
+		return hook, nil
+	default:
+		return nil, nil
 	}
-	return hook, nil
 
 	// hooksValue := string(h)
 	// if hooksValue == "" {
@@ -91,6 +97,9 @@ func (l logrusLogger) toInterfaceSlice(fields ...Field) []interface{} {
 }
 
 func (l logrusLogger) Debug(message string, fields ...Field) {
+	if l.logger.Level < logrus.DebugLevel {
+		return
+	}
 	if len(fields) <= 0 {
 		l.logger.Debug(message)
 	} else {
@@ -99,6 +108,9 @@ func (l logrusLogger) Debug(message string, fields ...Field) {
 }
 
 func (l logrusLogger) Info(message string, fields ...Field) {
+	if l.logger.Level < logrus.InfoLevel {
+		return
+	}
 	if len(fields) <= 0 {
 		l.logger.Info(message)
 	} else {
@@ -107,6 +119,9 @@ func (l logrusLogger) Info(message string, fields ...Field) {
 }
 
 func (l logrusLogger) Warn(message string, fields ...Field) {
+	if l.logger.Level < logrus.WarnLevel {
+		return
+	}
 	if len(fields) <= 0 {
 		l.logger.Warn(message)
 	} else {
@@ -176,7 +191,13 @@ func setupLogrus(loggerConfig Configuration) error {
 }
 
 func newLogrus(config Configuration) Logger {
-	logrusConfig, _ := createLogrusConfig(config)
+	logrusConfig, errs := createLogrusConfig(config)
+	if errs != nil {
+		fmt.Printf("NewLogrusConfigErr=%+v\n", errs)
+	}
+	if config.Debug {
+		fmt.Printf("NewLogrusConfig=%s\n", logrusConfig.String())
+	}
 	logger := new(logrusLogger)
 	logger.logger = &logrus.Logger{
 		Level:     logrusConfig.level,
@@ -196,15 +217,16 @@ func newLogrus(config Configuration) Logger {
 	if err != nil {
 		fmt.Println("CreateSyslogHook", err.Error())
 	}
-	fmt.Println("AddLogrusHooks", hooks)
-	hooks.Writer.Err("SettingSyslogErr")
 	if hooks != nil {
 		//for _, hook := range hooks {
+		hooks.Writer.Err("SettingSyslogErr")
 		logger.logger.Hooks.Add(hooks)
 		fmt.Println("SyslogHookAdded")
 		//}
 	}
-	logger.logger.Error("LogrusSyslogErr")
+	if config.Debug {
+		fmt.Printf("NewLogrusLogger=%+v\n", logger.logger)
+	}
 	return logger
 }
 
@@ -212,6 +234,10 @@ type logrusConfig struct {
 	output    io.Writer
 	formatter logrus.Formatter
 	level     logrus.Level
+}
+
+func (l logrusConfig) String() string {
+	return fmt.Sprintf("logrusConfig[level=%s formatter=%t output=%t]", l.level.String(), l.formatter != nil, l.output != nil)
 }
 
 func createLogrusConfig(cfg Configuration) (logrusConfig, []error) {
@@ -226,10 +252,13 @@ func createLogrusConfig(cfg Configuration) (logrusConfig, []error) {
 		output = tmpWriter
 	}
 	var level logrus.Level
-	if cfg.Level == Level(0) {
+	if cfg.Level == Level("") {
+		level = logrus.DebugLevel
+	} else if tmlLevel, tmpErr := logrus.ParseLevel(cfg.Level.String()); tmpErr != nil {
+		errs = append(errs, tmpErr)
 		level = logrus.DebugLevel
 	} else {
-		level = logrus.Level(cfg.Level)
+		level = tmlLevel
 	}
 	return logrusConfig{
 		level:     level,

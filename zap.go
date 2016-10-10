@@ -49,7 +49,7 @@ func (n Level) toZapLevel() zap.Level {
 	case FATAL:
 		return zap.FatalLevel
 	default:
-		return zap.Level(n)
+		return zap.FatalLevel
 	}
 }
 
@@ -68,6 +68,9 @@ func (l zapLogger) toZapFields(fields ...Field) []zap.Field {
 			zapFields = append(zapFields, zap.Int64(v.key, v.val.(int64)))
 		case StringField:
 			zapFields = append(zapFields, zap.String(v.key, v.val.(string)))
+		case BytesField:
+			//TODO: String cast is too slow
+			zapFields = append(zapFields, zap.String(v.key, string(v.val.([]byte))))
 		case BoolField:
 			zapFields = append(zapFields, zap.Bool(v.key, v.val.(bool)))
 		case FloatField, Float64Field:

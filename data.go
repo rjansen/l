@@ -31,20 +31,22 @@ const (
 	LOGRUSFmtfText Format = "logrusFrmtfText"
 
 	//PANIC is the panic level logger
-	PANIC Level = iota
+	PANIC Level = "panic"
 	//FATAL is the fatal level logger
-	FATAL
+	FATAL Level = "fatal"
 	//ERROR is the error level logger
-	ERROR
+	ERROR Level = "error"
 	//WARN is the warn level logger
-	WARN
+	WARN Level = "warn"
 	//INFO is the info level logger
-	INFO
+	INFO Level = "info"
 	//DEBUG is the debug level logger
-	DEBUG
+	DEBUG Level = "debug"
 
 	//StringField is a constant for string logger fields
 	StringField FieldType = iota
+	//BytesField is a constant for byte slice logger fields
+	BytesField
 	//IntField is a constant for string logger fields
 	IntField
 	//Int64Field is a constant for string logger fields
@@ -124,46 +126,16 @@ func (f optionFunc) apply(l Logger) {
 }
 
 //Level is the threshold of the logger
-type Level int
+type Level string
 
 // String returns a lower-case ASCII representation of the log level.
 func (n Level) String() string {
-	switch n {
-	case DEBUG:
-		return "debug"
-	case INFO:
-		return "info"
-	case WARN:
-		return "warn"
-	case ERROR:
-		return "error"
-	case PANIC:
-		return "panic"
-	case FATAL:
-		return "fatal"
-	default:
-		return fmt.Sprintf("Level(%d)", n)
-	}
+	return string(n)
 }
 
 // Set is a utility method for flag system usage
 func (l *Level) Set(value string) error {
-	switch value {
-	case "debug":
-		*l = DEBUG
-	case "info":
-		*l = INFO
-	case "warn":
-		*l = WARN
-	case "error":
-		*l = ERROR
-	case "panic":
-		*l = PANIC
-	case "fatal":
-		*l = FATAL
-	default:
-		*l = FATAL
-	}
+	*l = Level(value)
 	return nil
 }
 
@@ -182,6 +154,7 @@ func (f *Format) Set(value string) error {
 
 //Configuration holds the log beahvior parameters
 type Configuration struct {
+	Debug    bool     `json:"debug" mapstructure:"debug"`
 	Provider Provider `json:"provider" mapstructure:"provider"`
 	Level    Level    `json:"level" mapstructure:"level"`
 	Format   Format   `json:"format" mapstructure:"format"`
