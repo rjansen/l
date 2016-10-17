@@ -54,7 +54,7 @@ func Get() Logger {
 	// }
 	// })
 	if rootLogger == nil {
-		return NewLoggerByConfig(Configuration{Provider: LOGRUS})
+		panic("logger.Setup must me called first")
 	}
 	return rootLogger
 }

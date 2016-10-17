@@ -162,8 +162,8 @@ type Configuration struct {
 	Hooks    Hooks    `json:"hooks" mapstructure:"hooks"`
 }
 
-func (l *Configuration) String() string {
-	return fmt.Sprintf("Configuration[Provider=%s Level=%s Format=%s Out=%s Hooks=%s]", l.Provider, l.Level, l.Format, l.Out, l.Hooks)
+func (l Configuration) String() string {
+	return fmt.Sprintf("Configuration Provider=%s Level=%s Format=%s Out=%s Hooks=%s", l.Provider, l.Level, l.Format, l.Out, l.Hooks)
 }
 
 //FieldType is a type identifier for logger fields
@@ -186,6 +186,13 @@ type Logger interface {
 	Error(string, ...Field)
 	Panic(string, ...Field)
 	Fatal(string, ...Field)
+
+	Debugf(string, ...interface{})
+	Infof(string, ...interface{})
+	Warnf(string, ...interface{})
+	Errorf(string, ...interface{})
+	Panicf(string, ...interface{})
+	Fatalf(string, ...interface{})
 }
 
 type baseLogger struct {
@@ -198,4 +205,28 @@ func (b baseLogger) Level() Level {
 
 func (b baseLogger) IsEnabled(level Level) bool {
 	return b.level >= level
+}
+
+func (b baseLogger) Debugf(string, ...interface{}) {
+
+}
+
+func (b baseLogger) Infof(string, ...interface{}) {
+
+}
+
+func (b baseLogger) Warnf(string, ...interface{}) {
+
+}
+
+func (b baseLogger) Errorf(string, ...interface{}) {
+
+}
+
+func (b baseLogger) Panicf(string, ...interface{}) {
+
+}
+
+func (b baseLogger) Fatalf(string, ...interface{}) {
+
 }
