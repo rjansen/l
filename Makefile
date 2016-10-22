@@ -46,6 +46,8 @@ build:
 .PHONY: clean
 clean: 
 	-rm $(NAME)*coverage*
+	-rm *.test
+	-rm *.pprof
 
 .PHONY: reset
 reset: clean 
