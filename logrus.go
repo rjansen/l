@@ -10,10 +10,6 @@ import (
 	//"strings"
 )
 
-var (
-	rootLogrusConfig *logrusConfig
-)
-
 func (f Format) toLogrusFormatter() logrus.Formatter {
 	switch f {
 	case JSON:
@@ -36,7 +32,7 @@ func (h Hooks) toLogrusSyslogHook() (*logrus_syslog.SyslogHook, error) {
 	switch hookName {
 	case "syslog":
 		//hook, err := logrus_syslog.NewSyslogHook("udp", "127.0.0.1:514", syslog.LOG_DEBUG, "glive")
-		hook, err := logrus_syslog.NewSyslogHook("udp", "127.0.0.1:514", syslog.LOG_DEBUG, "glive")
+		hook, err := logrus_syslog.NewSyslogHook("udp", "127.0.0.1:514", syslog.LOG_DEBUG, "epedion")
 		if err != nil {
 			return nil, err
 		}
@@ -178,21 +174,21 @@ func (l logrusLogger) Fatalf(message string, fields ...interface{}) {
 }
 
 func setupLogrus(loggerConfig Configuration) error {
-	logrusConfig, errs := createLogrusConfig(loggerConfig)
+	logrusConfig, errs := toLogrusConfig(loggerConfig)
 	if errs != nil && len(errs) > 0 {
-		return fmt.Errorf("SetupLogrusErr[Errs=%v]", errs)
+		return fmt.Errorf("SetupLogrusErr Errs=%v", errs)
 	}
-	rootLogrusConfig = &logrusConfig
-	logrus.SetLevel(rootLogrusConfig.level)
-	logrus.SetFormatter(rootLogrusConfig.formatter)
-	logrus.SetOutput(rootLogrusConfig.output)
+	logrus.SetLevel(logrusConfig.level)
+	logrus.SetFormatter(logrusConfig.formatter)
+	logrus.SetOutput(logrusConfig.output)
 	loggerFactory = newLogrus
+	defaultConfig = &loggerConfig
 	return nil
 }
 
 func newLogrus(config Configuration) Logger {
-	logrusConfig, errs := createLogrusConfig(config)
-	if errs != nil {
+	logrusConfig, errs := toLogrusConfig(config)
+	if config.Debug && errs != nil {
 		fmt.Printf("NewLogrusConfigErr=%+v\n", errs)
 	}
 	if config.Debug {
@@ -213,17 +209,17 @@ func newLogrus(config Configuration) Logger {
 	//	fmt.Println("CreateSyslogErr", err.Error())
 	//}
 	//l3.Err("SyslogSimpleMsgErr")
-	hooks, err := config.Hooks.toLogrusSyslogHook()
-	if err != nil {
-		fmt.Println("CreateSyslogHook", err.Error())
-	}
-	if hooks != nil {
-		//for _, hook := range hooks {
-		hooks.Writer.Err("SettingSyslogErr")
-		logger.logger.Hooks.Add(hooks)
-		fmt.Println("SyslogHookAdded")
-		//}
-	}
+	// hooks, err := config.Hooks.toLogrusSyslogHook()
+	// if err != nil {
+	// 	fmt.Println("CreateSyslogHook", err.Error())
+	// }
+	// if hooks != nil {
+	// 	//for _, hook := range hooks {
+	// 	hooks.Writer.Err("SettingSyslogErr")
+	// 	logger.logger.Hooks.Add(hooks)
+	// 	fmt.Println("SyslogHookAdded")
+	// 	//}
+	// }
 	if config.Debug {
 		fmt.Printf("NewLogrusLogger=%+v\n", logger.logger)
 	}
@@ -240,7 +236,7 @@ func (l logrusConfig) String() string {
 	return fmt.Sprintf("logrusConfig[level=%s formatter=%t output=%t]", l.level.String(), l.formatter != nil, l.output != nil)
 }
 
-func createLogrusConfig(cfg Configuration) (logrusConfig, []error) {
+func toLogrusConfig(cfg Configuration) (logrusConfig, []error) {
 	var errs []error
 	var output io.Writer
 	if cfg.Out == Out("") {

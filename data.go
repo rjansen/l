@@ -69,9 +69,11 @@ const (
 
 var (
 	//ErrInvalidProvider is the err raised when an invalid provider was select
-	ErrInvalidProvider = errors.New("Logger.InvalidProvider[Message='Avaible providers are: LOGRUS and ZAP']")
-	//DefaultConfig holds the instance of the behavior parameters
-	DefaultConfig *Configuration
+	ErrInvalidProvider = errors.New("logger.InvalidProvider Message='Avaible providers are: LOGRUS and ZAP'")
+	//ErrSetupNeverCalled is raised when the Setup method does not call
+	ErrSetupNeverCalled = errors.New("logger.SetupNeverCalledErr Message='You must call logger.Setup before execute this action'")
+	defaultConfig       *Configuration
+	rootLogger          Logger
 )
 
 //Provider is the back end implementor id of the logging feature
@@ -83,6 +85,7 @@ func (p Provider) String() string {
 
 // Set is a utility method for flag system usage
 func (p *Provider) Set(value string) error {
+
 	*p = Provider(value)
 	return nil
 }
@@ -96,7 +99,11 @@ func (o Out) String() string {
 
 // Set is a utility method for flag system usage
 func (o *Out) Set(value string) error {
-	*o = Out(value)
+	if strings.TrimSpace(value) != "" {
+		*o = Out(value)
+	} else {
+		*o = STDOUT
+	}
 	return nil
 }
 
@@ -113,29 +120,21 @@ func (h *Hooks) Set(value string) error {
 	return nil
 }
 
-// Option is used to set options for the logger.
-type Option interface {
-	apply(Logger)
-}
-
-// optionFunc wraps a func so it satisfies the Option interface.
-type optionFunc func(Logger) error
-
-func (f optionFunc) apply(l Logger) {
-	f(l)
-}
-
 //Level is the threshold of the logger
 type Level string
 
 // String returns a lower-case ASCII representation of the log level.
-func (n Level) String() string {
-	return string(n)
+func (l Level) String() string {
+	return string(l)
 }
 
 // Set is a utility method for flag system usage
 func (l *Level) Set(value string) error {
-	*l = Level(value)
+	if strings.TrimSpace(value) != "" {
+		*l = Level(value)
+	} else {
+		*l = DEBUG
+	}
 	return nil
 }
 
@@ -148,7 +147,11 @@ func (f Format) String() string {
 
 // Set is a utility method for flag system usage
 func (f *Format) Set(value string) error {
-	*f = Format(value)
+	if strings.TrimSpace(value) != "" {
+		*f = Format(value)
+	} else {
+		*f = TEXT
+	}
 	return nil
 }
 
@@ -180,6 +183,7 @@ type Field struct {
 type Logger interface {
 	Level() Level
 	IsEnabled(Level) bool
+
 	Debug(string, ...Field)
 	Info(string, ...Field)
 	Warn(string, ...Field)

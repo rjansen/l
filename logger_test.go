@@ -20,20 +20,32 @@ var (
 	myZapConfig    = Configuration{Provider: ZAP, Out: DISCARD}
 )
 
+func clean(t assert.TestingT) {
+	defaultConfig = nil
+	loggerFactory = nil
+	reset(t)
+}
+
+func reset(t assert.TestingT) {
+	rootLogger = nil
+	once.Reset()
+}
+
 func setupLoggerTest(t assert.TestingT, config Configuration) {
+	clean(t)
 	setupErr := Setup(config)
 	assert.Nil(t, setupErr)
 }
 
 func newLoggerTest(t assert.TestingT, config Configuration) Logger {
 	setupLoggerTest(t, config)
-	logger := NewLogger()
+	logger := create()
 	assert.NotNil(t, logger)
 	return logger
 }
 
 func newLogrusByConfigTest(t assert.TestingT, config Configuration) Logger {
-	logger := NewLoggerByConfig(config)
+	logger := New(config)
 	assert.NotNil(t, logger)
 	return logger
 }
@@ -70,9 +82,9 @@ func TestSetupLogger(t *testing.T) {
 		config  Configuration
 		success bool
 	}{
-		{Configuration{Out: STDOUT}, false},
-		{Configuration{Out: STDERR}, false},
-		{Configuration{Out: DISCARD}, false},
+		{Configuration{Out: STDOUT}, true},
+		{Configuration{Out: STDERR}, true},
+		{Configuration{Out: DISCARD}, true},
 		{Configuration{Provider: LOGRUS}, true},
 		{Configuration{Provider: ZAP}, true},
 		{Configuration{Provider: LOGRUS, Out: STDOUT}, true},
@@ -99,6 +111,7 @@ func TestSetupLogger(t *testing.T) {
 		//{Configuration{Provider: ZAP, Level: Level(99)}, false},
 	}
 	for _, c := range cases {
+		clean(t)
 		err := Setup(c.config)
 		if c.success {
 			assert.Nil(t, err, fmt.Sprintf("Not Nil for data=%+v", c))
@@ -110,7 +123,7 @@ func TestSetupLogger(t *testing.T) {
 
 func TestGetLogger(t *testing.T) {
 	setupLoggerTest(t, configTest)
-	r := GetLogger()
+	r := Get()
 	assert.NotNil(t, r)
 	logTest(r)
 }
@@ -126,7 +139,7 @@ func TestNewLoggerByConfig(t *testing.T) {
 }
 
 func TestNewLoggerByInvalidLevelConfig(t *testing.T) {
-	l := NewLoggerByConfig(Configuration{Level: Level(99)})
+	l := New(Configuration{Provider: LOGRUS, Level: Level(99)})
 	assert.NotNil(t, l)
 }
 
@@ -172,9 +185,11 @@ func TestFormatSet(t *testing.T) {
 }
 
 func TestSetupLoggerErrInvalidProvider(t *testing.T) {
+	clean(t)
 	config := Configuration{}
-	setupErr := Setup(config)
-	assert.Equal(t, setupErr, ErrInvalidProvider)
+	assert.Panics(t, func() {
+		New(config)
+	})
 }
 
 func TestNewLoggerSuccess(t *testing.T) {
@@ -185,9 +200,10 @@ func TestNewLoggerSuccess(t *testing.T) {
 		{Configuration{Provider: ZAP}},
 	}
 	for _, c := range cases {
+		clean(t)
 		setupErr := Setup(c.config)
 		assert.Nil(t, setupErr)
-		logger := NewLogger()
+		logger := create()
 		assert.NotNil(t, logger)
 		switch c.config.Provider {
 		case LOGRUS:
@@ -209,6 +225,7 @@ func logrusTestSetup() {
 }
 
 func myLogrusTestSetup(t assert.TestingT) {
+	clean(t)
 	setupErr := Setup(myLogrusConfig)
 	assert.Nil(t, setupErr)
 }
@@ -232,6 +249,7 @@ func barkifyZapTestSetup(t assert.TestingT) {
 }
 
 func myZapTestSetup(t assert.TestingT) {
+	clean(t)
 	setupErr := Setup(myZapConfig)
 	assert.Nil(t, setupErr)
 }
@@ -266,7 +284,7 @@ func BenchmarkMySetupZapLogger(b *testing.B) {
 }
 
 func myNewLogger(t assert.TestingT) Logger {
-	l := NewLogger()
+	l := create()
 	assert.NotNil(t, l)
 	return l
 }

@@ -28,10 +28,10 @@
 			"revisionTime": "2016-03-05T16:54:46Z"
 		},
 		{
-			"checksumSHA1": "BoXdUBWB8UnSlFlbnuTQaPqfCGk=",
-			"path": "github.com/op/go-logging",
-			"revision": "970db520ece77730c7e4724c61121037378659d9",
-			"revisionTime": "2016-03-15T20:05:05Z"
+			"checksumSHA1": "UlJlaWJmybGO2BvHO8pztJ4PK3M=",
+			"path": "github.com/matryer/resync",
+			"revision": "fe19c89a748b39c5c70d27dc044ff64aee0b4f99",
+			"revisionTime": "2016-06-30T15:46:34Z"
 		},
 		{
 			"checksumSHA1": "zKKp5SZ3d3ycKe4EKMNT0BqAWBw=",
