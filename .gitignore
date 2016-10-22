@@ -1,3 +1,4 @@
 logger*coverage*
 vendor/*/
 *.pprof
+*.test

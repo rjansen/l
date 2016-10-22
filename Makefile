@@ -1,27 +1,23 @@
-NAME 		:= logger
-BIN         := $(NAME)
-REPO        := farm.e-pedion.com/repo/$(NAME)
-BUILD       := $(shell git rev-parse --short HEAD)
-#VERSION     := $(shell git describe --tags $(shell git rev-list --tags --max-count=1))
-MAKEFILE    := $(word $(words $(MAKEFILE_LIST)), $(MAKEFILE_LIST))
-BASE_DIR    := $(shell cd $(dir $(MAKEFILE)); pwd)
-PKGS        := $(shell go list)
-COVERAGE_FILE   := $(NAME).coverage
-COVERAGE_HTML  	:= $(NAME).coverage.html
-PKG_COVERAGE   	:= $(NAME).pkg.coverage
+NAME 			:= logger
+BIN         	:= $(NAME)
+REPO        	:= farm.e-pedion.com/repo/$(NAME)
+BUILD       	:= $(shell openssl rand -hex 10)
+VERSION     	:= $(shell if [ -f version ]; then awk '{printf $1}' < version; else openssl rand -hex 5; fi)
+MAKEFILE    	:= $(word $(words $(MAKEFILE_LIST)), $(MAKEFILE_LIST))
+BASE_DIR    	:= $(shell cd $(dir $(MAKEFILE)); pwd)
+PKGS        	:= $(shell go list ./... | grep -v /vendor/)
 
-ETC_DIR := $(BASE_DIR)/etc
-CONF_DIR := $(ETC_DIR)/$(NAME)
-CONF := $(CONF_DIR)/$(NAME).yml
-
-ENV := local
-TEST_PKGS := 
+#Test and Benchmark Parameters
+TEST_PKGS ?= 
+COVERAGE_FILE := $(NAME).coverage
+COVERAGE_HTML := $(NAME).coverage.html
+PKG_COVERAGE := $(NAME).pkg.coverage
 
 .PHONY: default
 default: build
 
 .PHONY: install
-install: install_sw_deps sync
+install: install_sw_deps sync_deps
 	@echo "Logger installed successfully" 
 
 .PHONY: install_sw_deps
@@ -31,83 +27,39 @@ install_sw_deps:
 
 .PHONY: install_deps
 install_deps:
-	go get -u github.com/op/go-logging
-	go get -u github.com/Sirupsen/logrus
-	go get -u github.com/uber-go/zap
+	govendor fetch github.com/matryer/resync
+	govendor fetch github.com/Sirupsen/logrus/...
+	govendor fetch github.com/uber-go/zap
+
+.PHONY: sync_deps
+sync_deps:
+	govendor sync
 
 .PHONY: all
 all: build test bench_all coverage
 
 .PHONY: build
 build:
+	@echo "Building $(REPO)@$(VERSION)-$(BUILD)"
 	go build $(REPO)
 
-.PHONY: sync
-sync:
-	govendor sync
+.PHONY: clean
+clean: 
+	-rm $(NAME)*coverage*
 
 .PHONY: reset
-reset: 
-	-rm $(NAME)*coverage*
+reset: clean 
 	-cd vendor; rm -r */
-
-.PHONY: local
-local: 
-	@echo "Set enviroment to local"
-	$(eval ENV = "local")
-
-.PHONY: dev
-dev: 
-	@echo "Set enviroment to dev"
-	$(eval ENV = "dev")
-
-.PHONY: prod
-prod: 
-	@echo "Set enviroment to prod"
-	$(eval ENV = "prod")
-
-.PHONY: check_env
-check_env:
-	@if [ "$(ENV)" == "" ]; then \
-	    echo "Env is blank: $(ENV)"; \
-	    exit 540; \
-	fi
-
-.PHONY: filter_conf
-filter_conf: check_env
-	@echo "Filtering Conf Env=$(ENV)"
-	@source $(CONF_DIR)/$(NAME).$(ENV).etv && eval "echo \"`cat $(CONF_DIR)/$(NAME).etf`\"" > $(CONF)
-
-.PHONY: check_conf
-check_conf:
-	@if [ ! -f $(CONF) ]; then \
-	    echo "Config file: $(CONF) not found for Env: $(ENV)"; \
-	    exit 541; \
-	fi
-
-.PHONY: test_loop
-test_loop:
-	@if [ "$(TEST_PKGS)" == "" ]; then \
-	    echo "Test All Pkgs";\
-	    for pkg in $(PKGS); do \
-			go test -v -race $$pkg || exit 501;\
-		done; \
-	else \
-	    echo "Test Selected Pkgs=$(TEST_PKGS)";\
-	    for tstpkg in $(TEST_PKGS); do \
-		    go test -v -race $(REPO)/$$tstpkg || exit 501;\
-		done; \
-	fi
 
 .PHONY: test_all
 test_all:
-	go test -v -race 
+	go test -v -race $(PKGS)
 
 .PHONY: test
 test:
 	@if [ "$(TEST_PKGS)" == "" ]; then \
 	    echo "Test All Pkgs";\
-		go test -v -race || exit 501;\
+		go test -v -race $(PKGS) || exit 501;\
 	else \
 	    echo "Test Selected Pkgs=$(TEST_PKGS)";\
 		SELECTED_TEST_PKGS="";\
@@ -118,34 +70,26 @@ test:
 
 .PHONY: bench_all
 bench_all:
-	go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem
+	#go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $(PKGS)
+	go test -bench=. -run="^$$" -benchmem $(PKGS)
 
-.PHONY: bench
+.PHONY: benchmark
 bench:
 	@if [ "$(TEST_PKGS)" == "" ]; then \
-	    echo "Bench All Pkgs" ;\
-		go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem || exit 501;\
+	    echo "Benchmark all Pkgs" ;\
+	    for tstpkg in $(PKGS); do \
+		    go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $$tstpkg || exit 501;\
+		done; \
 	else \
-	    echo "Test Selected Pkgs=$(TEST_PKGS)" ;\
+	    echo "Benchmark Selected Pkgs=$(TEST_PKGS)" ;\
 	    for tstpkg in $(TEST_PKGS); do \
 		    go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $(REPO)/$$tstpkg || exit 501;\
 		done; \
 	fi
 
-#BENCH_FLAGS ?= -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem
-#PKGS ?= $(shell glide novendor)
-## Many Go tools take file globs or directories as arguments instead of packages.
-#PKG_FILES ?= *.go spy benchmarks zwrap zbark testutils
-
-#.PHONY: bench
-#BENCH ?= .
-#bench:
-#	@$(foreach pkg,$(PKGS),go test -bench=$(BENCH) -run="^$$" $(BENCH_FLAGS) $(pkg);)
-
-
 .PHONY: coverage
 coverage:
-	@echo "Running tests with coverage report..."
+	@echo "Testing with coverage"
 	@echo 'mode: set' > $(COVERAGE_FILE)
 	@touch $(PKG_COVERAGE)
 	@touch $(COVERAGE_FILE)
@@ -155,12 +99,12 @@ coverage:
 			grep -v 'mode: set' $(PKG_COVERAGE) >> $(COVERAGE_FILE); \
 		done; \
 	else \
-	    echo "Covegare Test Selected Pkgs=$(TEST_PKGS)" ;\
+	    echo "Testing with covegare the Pkgs=$(TEST_PKGS)" ;\
 	    for tstpkg in $(TEST_PKGS); do \
 			go test -v -coverprofile=$(PKG_COVERAGE) $(REPO)/$$tstpkg || exit 501; \
 			grep -v 'mode: set' $(PKG_COVERAGE) >> $(COVERAGE_FILE); \
 		done; \
 	fi
-	@echo "Generating HTML report in $(COVERAGE_HTML)..."
-	go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
-	@(which -s open && open $(COVERAGE_HTML)) || (which -s gnome-open && gnome-open $(COVERAGE_HTML)) || (exit 0)
+	@echo "Generating report"
+	@go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
+	open $(COVERAGE_HTML)
