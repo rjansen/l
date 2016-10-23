@@ -22,6 +22,16 @@ var (
 	rootLogger          Logger
 )
 
+func init() {
+	fmt.Printf("logger.init\n")
+	// if err := config.UnmarshalKey("logger.root", &defaultConfig); err != nil {
+	// 	panic(err)
+	// }
+	// if defaultConfig.Debug {
+	// 	fmt.Printf("logger.init configuration=%s", defaultConfig.String())
+	// }
+}
+
 //Setup initializes the logger system
 func Setup(loggerConfig Configuration) error {
 	if loggerConfig.Debug {
