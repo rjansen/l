@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"farm.e-pedion.com/repo/config"
 	"fmt"
 	"github.com/matryer/resync"
 	"io"
@@ -37,17 +38,10 @@ func Get() Logger {
 	once.Do(func() {
 		if rootLogger == nil {
 			setted := isSetted()
-			fmt.Println("logger.Get.isSetted =", setted, " defaultConfig =", defaultConfig, " loggerFactory =", loggerFactory)
-			if !isSetted() {
-				cfg := Configuration{
-					Provider: LOGRUS,
-					Format:   TEXTColor,
-					Out:      STDOUT,
-					Hooks:    Hooks("syslog"),
-				}
-				fmt.Println("logger.Get.Setup =", cfg.String())
-				err := Setup(cfg)
-				if err != nil {
+			if !setted {
+				fmt.Printf("logger.Get.isSetted setted=%t defaultConfigIsNil=%t loggerFactoryIsNil=%t\n", setted, defaultConfig == nil, loggerFactory == nil)
+				loggerConfig, _ := getConfiguration("logger.root")
+				if err := Setup(loggerConfig); err != nil {
 					panic(err)
 				}
 			}
@@ -63,11 +57,22 @@ func isSetted() bool {
 
 func create() Logger {
 	setted := isSetted()
-	fmt.Println("logger.create.isSetted =", setted, " defaultConfig =", defaultConfig, " loggerFactory =", loggerFactory)
 	if !setted {
+		fmt.Printf("logger.create.isSetted setted=%t defaultConfigIsNil=%t loggerFactoryIsNil=%t\n", setted, defaultConfig == nil, loggerFactory == nil)
 		panic(ErrSetupNeverCalled)
 	}
 	return loggerFactory(*defaultConfig)
+}
+
+func getConfiguration(configName string) (Configuration, error) {
+	var loggerConfig Configuration
+	if err := config.UnmarshalKey(configName, &loggerConfig); err != nil {
+		return Configuration{}, err
+	}
+	if loggerConfig.Debug {
+		fmt.Printf("logger.getConfiguration Configuration=%s", loggerConfig.String())
+	}
+	return loggerConfig, nil
 }
 
 //New creates a logger implemetor with the provided configuration
@@ -80,6 +85,15 @@ func New(config Configuration) Logger {
 	default:
 		panic(ErrInvalidProvider)
 	}
+}
+
+//NewByConfig creates a logger implemetor with the provided named configuration
+func NewByConfig(configName string) Logger {
+	loggerConfig, err := getConfiguration(configName)
+	if err != nil {
+		panic(err)
+	}
+	return New(loggerConfig)
 }
 
 func getOutput(out Out) (io.Writer, error) {
