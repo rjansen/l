@@ -3,10 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "TAQWGOpyOjvsHERuOX6XIOh1zv8=",
+			"checksumSHA1": "zCdq36gqyVmWEeK9DWEuGPb4BA4=",
 			"path": "farm.e-pedion.com/repo/config",
-			"revision": "1dd2736b9aa1673f21fa02acb0bd2f91972ea952",
-			"revisionTime": "2016-10-23T01:41:45Z"
+			"revision": "a36fdba63569342a24b9ed4aaa3d18dacb7d37e7",
+			"revisionTime": "2016-10-23T04:43:11Z"
 		},
 		{
 			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",

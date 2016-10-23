@@ -18,7 +18,7 @@ default: build
 
 .PHONY: install
 install: install_sw_deps sync_deps
-	@echo "Logger installed successfully" 
+	@echo "$(REPO) installed successfully" 
 
 .PHONY: install_sw_deps
 install_sw_deps:

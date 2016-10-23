@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -65,15 +64,6 @@ const (
 	StructField
 	//ErrorField is a constant for error logger fields
 	ErrorField
-)
-
-var (
-	//ErrInvalidProvider is the err raised when an invalid provider was select
-	ErrInvalidProvider = errors.New("logger.InvalidProvider Message='Avaible providers are: LOGRUS and ZAP'")
-	//ErrSetupNeverCalled is raised when the Setup method does not call
-	ErrSetupNeverCalled = errors.New("logger.SetupNeverCalledErr Message='You must call logger.Setup before execute this action'")
-	defaultConfig       *Configuration
-	rootLogger          Logger
 )
 
 //Provider is the back end implementor id of the logging feature
