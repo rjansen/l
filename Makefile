@@ -41,7 +41,7 @@ all: build test bench_all coverage
 .PHONY: build
 build:
 	@echo "Building $(REPO)@$(VERSION)-$(BUILD)"
-	go build $(REPO)
+	go build $(PKGS)
 
 .PHONY: clean
 clean: 
