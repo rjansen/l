@@ -1,15 +1,14 @@
 package logger
 
 import (
+	"errors"
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/uber-common/bark"
 	"github.com/uber-go/zap"
 	"github.com/uber-go/zap/zbark"
 	"io/ioutil"
-	//"os"
-	"errors"
-	"fmt"
 	"testing"
 	"time"
 )
