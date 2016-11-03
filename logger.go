@@ -48,11 +48,13 @@ func Setup(loggerConfig Configuration) error {
 func Get() Logger {
 	once.Do(func() {
 		if rootLogger == nil {
-			setted := isSetted()
-			if !setted {
-				loggerConfig, _ := getConfiguration("logger.root")
+			if !isSetted() {
+				loggerConfig, err := getConfiguration("logger.root")
+				if err != nil {
+					fmt.Printf("logger.Get.SetupErr setted=%t defaultConfigIsNil=%t loggerFactoryIsNil=%t error=%s\n", isSetted(), defaultConfig == nil, loggerFactory == nil, err.Error())
+					loggerConfig = Configuration{}
+				}
 				if err := Setup(loggerConfig); err != nil {
-					fmt.Printf("logger.Get.SetupErr setted=%t defaultConfigIsNil=%t loggerFactoryIsNil=%t\n", setted, defaultConfig == nil, loggerFactory == nil)
 					panic(err)
 				}
 			}
@@ -67,9 +69,8 @@ func isSetted() bool {
 }
 
 func create() Logger {
-	setted := isSetted()
-	if !setted {
-		fmt.Printf("logger.create.setupDoesNotCallErr setted=%t defaultConfigIsNil=%t loggerFactoryIsNil=%t\n", setted, defaultConfig == nil, loggerFactory == nil)
+	if !isSetted() {
+		fmt.Printf("logger.create.setupDoesNotCallErr setted=%t defaultConfigIsNil=%t loggerFactoryIsNil=%t\n", isSetted(), defaultConfig == nil, loggerFactory == nil)
 		panic(ErrSetupNeverCalled)
 	}
 	return loggerFactory(*defaultConfig)
