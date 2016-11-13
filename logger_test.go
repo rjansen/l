@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	configTest     = Configuration{Provider: LOGRUS, Format: TEXT, Out: DISCARD}
-	myLogrusConfig = Configuration{Provider: LOGRUS, Format: TEXT, Out: DISCARD}
-	myZapConfig    = Configuration{Provider: ZAP, Out: DISCARD}
+	configTest     = &Configuration{Provider: LOGRUS, Format: TEXT, Out: DISCARD}
+	myLogrusConfig = &Configuration{Provider: LOGRUS, Format: TEXT, Out: DISCARD}
+	myZapConfig    = &Configuration{Provider: ZAP, Out: DISCARD}
 )
 
 func clean(t assert.TestingT) {
@@ -30,20 +30,20 @@ func reset(t assert.TestingT) {
 	once.Reset()
 }
 
-func setupLoggerTest(t assert.TestingT, config Configuration) {
+func setupLoggerTest(t assert.TestingT, config *Configuration) {
 	clean(t)
 	setupErr := Setup(config)
 	assert.Nil(t, setupErr)
 }
 
-func newLoggerTest(t assert.TestingT, config Configuration) Logger {
+func newLoggerTest(t assert.TestingT, config *Configuration) Logger {
 	setupLoggerTest(t, config)
 	logger := create()
 	assert.NotNil(t, logger)
 	return logger
 }
 
-func newLogrusByConfigTest(t assert.TestingT, config Configuration) Logger {
+func newLogrusByConfigTest(t assert.TestingT, config *Configuration) Logger {
 	logger := New(config)
 	assert.NotNil(t, logger)
 	return logger
@@ -111,7 +111,7 @@ func TestSetupLogger(t *testing.T) {
 	}
 	for _, c := range cases {
 		clean(t)
-		err := Setup(c.config)
+		err := Setup(&c.config)
 		if c.success {
 			assert.Nil(t, err, fmt.Sprintf("Not Nil for data=%+v", c))
 		} else {
@@ -138,7 +138,7 @@ func TestNewLoggerByConfig(t *testing.T) {
 }
 
 func TestNewLoggerByInvalidLevelConfig(t *testing.T) {
-	l := New(Configuration{Provider: LOGRUS, Level: Level(99)})
+	l := New(&Configuration{Provider: LOGRUS, Level: Level(99)})
 	assert.NotNil(t, l)
 }
 
@@ -185,7 +185,7 @@ func TestFormatSet(t *testing.T) {
 
 func TestSetupLoggerErrInvalidProvider(t *testing.T) {
 	clean(t)
-	config := Configuration{}
+	config := &Configuration{}
 	assert.Panics(t, func() {
 		New(config)
 	})
@@ -200,7 +200,7 @@ func TestNewLoggerSuccess(t *testing.T) {
 	}
 	for _, c := range cases {
 		clean(t)
-		setupErr := Setup(c.config)
+		setupErr := Setup(&c.config)
 		assert.Nil(t, setupErr)
 		logger := create()
 		assert.NotNil(t, logger)

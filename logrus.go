@@ -173,8 +173,8 @@ func (l logrusLogger) Fatalf(message string, fields ...interface{}) {
 	l.logger.Fatalf(message, fields...)
 }
 
-func setupLogrus(loggerConfig Configuration) error {
-	logrusConfig, errs := toLogrusConfig(loggerConfig)
+func setupLogrus(loggerConfig *Configuration) error {
+	logrusConfig, errs := toLogrusConfig(*loggerConfig)
 	if errs != nil && len(errs) > 0 {
 		return fmt.Errorf("SetupLogrusErr Errs=%v", errs)
 	}
@@ -182,7 +182,7 @@ func setupLogrus(loggerConfig Configuration) error {
 	logrus.SetFormatter(logrusConfig.formatter)
 	logrus.SetOutput(logrusConfig.output)
 	loggerFactory = newLogrus
-	defaultConfig = &loggerConfig
+	defaultConfig = loggerConfig
 	return nil
 }
 

@@ -136,9 +136,9 @@ func (l zapLogger) Fatal(message string, fields ...Field) {
 	}
 }
 
-func setupZap(loggerConfig Configuration) error {
+func setupZap(loggerConfig *Configuration) error {
 	loggerFactory = newZap
-	defaultConfig = &loggerConfig
+	defaultConfig = loggerConfig
 	return nil
 }
 

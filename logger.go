@@ -27,7 +27,7 @@ func init() {
 }
 
 //Setup initializes the logger system
-func Setup(loggerConfig Configuration) error {
+func Setup(loggerConfig *Configuration) error {
 	if loggerConfig.Debug {
 		fmt.Printf("logger.Setup config=%+v\n", loggerConfig)
 	}
@@ -52,7 +52,7 @@ func Get() Logger {
 				loggerConfig, err := getConfiguration("logger.root")
 				if err != nil {
 					fmt.Printf("logger.Get.SetupErr setted=%t defaultConfigIsNil=%t loggerFactoryIsNil=%t error=%s\n", isSetted(), defaultConfig == nil, loggerFactory == nil, err.Error())
-					loggerConfig = Configuration{}
+					loggerConfig = &Configuration{}
 				}
 				if err := Setup(loggerConfig); err != nil {
 					panic(err)
@@ -76,10 +76,10 @@ func create() Logger {
 	return loggerFactory(*defaultConfig)
 }
 
-func getConfiguration(configName string) (Configuration, error) {
-	var loggerConfig Configuration
+func getConfiguration(configName string) (*Configuration, error) {
+	var loggerConfig *Configuration
 	if err := config.UnmarshalKey(configName, &loggerConfig); err != nil {
-		return Configuration{}, err
+		return nil, err
 	}
 	if loggerConfig.Debug {
 		fmt.Printf("logger.getConfiguration Configuration=%s", loggerConfig.String())
@@ -88,12 +88,12 @@ func getConfiguration(configName string) (Configuration, error) {
 }
 
 //New creates a logger implemetor with the provided configuration
-func New(config Configuration) Logger {
+func New(config *Configuration) Logger {
 	switch config.Provider {
 	case ZAP:
-		return newZap(config)
+		return newZap(*config)
 	case LOGRUS:
-		return newLogrus(config)
+		return newLogrus(*config)
 	default:
 		panic(ErrInvalidProvider)
 	}
