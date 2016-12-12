@@ -1,10 +1,10 @@
-package logger
+package l
 
 import (
 	"errors"
-	"farm.e-pedion.com/repo/config"
 	"fmt"
 	"github.com/matryer/resync"
+	"github.com/rjansen/migi"
 	"io"
 	"io/ioutil"
 	"os"
@@ -78,7 +78,7 @@ func create() Logger {
 
 func getConfiguration(configName string) (*Configuration, error) {
 	var loggerConfig *Configuration
-	if err := config.UnmarshalKey(configName, &loggerConfig); err != nil {
+	if err := migi.UnmarshalKey(configName, &loggerConfig); err != nil {
 		return nil, err
 	}
 	if loggerConfig.Debug {

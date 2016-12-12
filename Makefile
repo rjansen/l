@@ -1,6 +1,6 @@
-NAME 			:= logger
+NAME 			:= l
 BIN         	:= $(NAME)
-REPO        	:= farm.e-pedion.com/repo/$(NAME)
+REPO        	:= github.com/rjansen/$(NAME)
 BUILD       	:= $(shell openssl rand -hex 10)
 VERSION     	:= $(shell if [ -f version ]; then awk '{printf $1}' < version; else openssl rand -hex 5; fi)
 MAKEFILE    	:= $(word $(words $(MAKEFILE_LIST)), $(MAKEFILE_LIST))

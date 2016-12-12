@@ -1,4 +1,4 @@
-package logger
+package l
 
 import (
 	"github.com/uber-go/zap"
