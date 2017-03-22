@@ -1,7 +1,7 @@
 package l
 
 import (
-	"github.com/uber-go/zap"
+	"go.uber.org/zap"
 	"os"
 	"time"
 )

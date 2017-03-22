@@ -2,6 +2,9 @@ package l
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -13,11 +16,6 @@ const (
 	//DISCARD set logger to ignore all message
 	DISCARD Out = "discard"
 
-	//LOGRUS is the github.com/Sirupsen/logrus id
-	LOGRUS Provider = "logrus"
-	//ZAP is the github.com/uber-go/zap id
-	ZAP Provider = "zap"
-
 	//TEXT is the text log format
 	TEXT Format = "text"
 	//TEXTColor is the text log format with color
@@ -26,11 +24,7 @@ const (
 	JSON Format = "json"
 	//JSONColor is the json log format with color
 	JSONColor Format = "json_color"
-	//LOGRUSFmtfText is the text with the logrus formatf approach
-	LOGRUSFmtfText Format = "logrusFrmtfText"
 
-	//PANIC is the panic level logger
-	PANIC Level = "panic"
 	//FATAL is the fatal level logger
 	FATAL Level = "fatal"
 	//ERROR is the error level logger
@@ -62,23 +56,14 @@ const (
 	BoolField
 	//StructField is a constant for string logger fields
 	StructField
+	//SliceField is a constant for slice logger fields
+	SliceField
 	//ErrorField is a constant for error logger fields
 	ErrorField
 )
 
-//Provider is the back end implementor id of the logging feature
-type Provider string
-
-func (p Provider) String() string {
-	return string(p)
-}
-
-// Set is a utility method for flag system usage
-func (p *Provider) Set(value string) error {
-
-	*p = Provider(value)
-	return nil
-}
+//Provider is the type for create loggers
+type Provider func(...Field) Logger
 
 //Out is the type for logger writer config
 type Out string
@@ -97,17 +82,22 @@ func (o *Out) Set(value string) error {
 	return nil
 }
 
-//Hooks is the type to configure an create hooks for the logger implementation
-type Hooks string
-
-func (h Hooks) String() string {
-	return string(h)
-}
-
-// Set is a utility method for flag system usage
-func (h *Hooks) Set(value string) error {
-	*h = Hooks(strings.TrimSpace(value))
-	return nil
+//GetOutput returns the out writer instance
+func (o Out) GetOutput() (io.Writer, error) {
+	switch o {
+	case STDOUT:
+		return os.Stdout, nil
+	case STDERR:
+		return os.Stderr, nil
+	case DISCARD:
+		return ioutil.Discard, nil
+	default:
+		file, err := os.OpenFile(o.String(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			return nil, fmt.Errorf("l.CreateFileOutputErr Out=%v Message='%v'", o, err)
+		}
+		return file, nil
+	}
 }
 
 //Level is the threshold of the logger
@@ -145,82 +135,36 @@ func (f *Format) Set(value string) error {
 	return nil
 }
 
-//Configuration holds the log beahvior parameters
-type Configuration struct {
-	Debug    bool     `json:"debug" mapstructure:"debug"`
-	Provider Provider `json:"provider" mapstructure:"provider"`
-	Level    Level    `json:"level" mapstructure:"level"`
-	Format   Format   `json:"format" mapstructure:"format"`
-	Out      Out      `json:"out" mapstructure:"out"`
-	Hooks    Hooks    `json:"hooks" mapstructure:"hooks"`
-}
-
-func (l Configuration) String() string {
-	return fmt.Sprintf("Configuration Provider=%s Level=%s Format=%s Out=%s Hooks=%s", l.Provider, l.Level, l.Format, l.Out, l.Hooks)
-}
-
 //FieldType is a type identifier for logger fields
 type FieldType int8
 
 //Field is a struct to send paramaters to log messages
 type Field struct {
-	key     string
-	val     interface{}
-	valType FieldType
+	Key     string
+	Val     interface{}
+	ValType FieldType
 }
 
 //Logger is an interface to write log messages
 type Logger interface {
 	Level() Level
-	IsEnabled(Level) bool
+	Enabled(Level) bool
 
 	Debug(string, ...Field)
 	Info(string, ...Field)
 	Warn(string, ...Field)
 	Error(string, ...Field)
-	Panic(string, ...Field)
 	Fatal(string, ...Field)
-
-	Debugf(string, ...interface{})
-	Infof(string, ...interface{})
-	Warnf(string, ...interface{})
-	Errorf(string, ...interface{})
-	Panicf(string, ...interface{})
-	Fatalf(string, ...interface{})
 }
 
-type baseLogger struct {
+type BaseLogger struct {
 	level Level
 }
 
-func (b baseLogger) Level() Level {
+func (b BaseLogger) Level() Level {
 	return b.level
 }
 
-func (b baseLogger) IsEnabled(level Level) bool {
+func (b BaseLogger) Enabled(level Level) bool {
 	return b.level >= level
-}
-
-func (b baseLogger) Debugf(string, ...interface{}) {
-
-}
-
-func (b baseLogger) Infof(string, ...interface{}) {
-
-}
-
-func (b baseLogger) Warnf(string, ...interface{}) {
-
-}
-
-func (b baseLogger) Errorf(string, ...interface{}) {
-
-}
-
-func (b baseLogger) Panicf(string, ...interface{}) {
-
-}
-
-func (b baseLogger) Fatalf(string, ...interface{}) {
-
 }
