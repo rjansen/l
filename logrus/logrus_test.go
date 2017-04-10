@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	configTest     = &Configuration{Format: l.TEXT, Out: l.DISCARD}
-	myLogrusConfig = &Configuration{Format: l.TEXT, Out: l.DISCARD}
+	configTest     = &l.Configuration{Format: l.TEXT, Out: l.DISCARD}
+	myLogrusConfig = &l.Configuration{Format: l.TEXT, Out: l.DISCARD}
 )
 
 func clean(t assert.TestingT) {
@@ -27,20 +27,21 @@ func reset(t assert.TestingT) {
 	// once.Reset()
 }
 
-func setupLoggerTest(t assert.TestingT, config *Configuration) {
+func setupLoggerTest(t assert.TestingT, config *l.Configuration) {
 	clean(t)
 	setupErr := Setup(config)
 	assert.Nil(t, setupErr)
 }
 
-func newLoggerTest(t assert.TestingT, config *Configuration) l.Logger {
+func newLoggerTest(t assert.TestingT, config *l.Configuration) l.Logger {
 	setupLoggerTest(t, config)
-	logger := New()
+	logger, err := New()
+	assert.Nil(t, err)
 	assert.NotNil(t, logger)
 	return logger
 }
 
-func newLogrusByConfigTest(t assert.TestingT, config *Configuration) l.Logger {
+func newLogrusByConfigTest(t assert.TestingT, config *l.Configuration) l.Logger {
 	logger, err := NewByConfig(config)
 	assert.Nil(t, err)
 	assert.NotNil(t, logger)
@@ -76,19 +77,19 @@ func logTest(logger l.Logger) {
 
 func TestSetupLogger(t *testing.T) {
 	cases := []struct {
-		config  Configuration
+		config  l.Configuration
 		success bool
 	}{
-		{Configuration{}, true},
-		{Configuration{Out: l.STDOUT}, true},
-		{Configuration{Out: l.STDERR}, true},
-		{Configuration{Out: l.DISCARD}, true},
-		{Configuration{Out: l.Out("/tmp/glive_test.log")}, true},
-		{Configuration{Format: l.JSON}, true},
-		{Configuration{Format: l.TEXT}, true},
-		{Configuration{Format: l.TEXTColor}, true},
-		{Configuration{Format: l.JSONColor}, true},
-		{Configuration{Level: l.Level("invalid")}, false},
+		{l.Configuration{}, true},
+		{l.Configuration{Out: l.STDOUT}, true},
+		{l.Configuration{Out: l.STDERR}, true},
+		{l.Configuration{Out: l.DISCARD}, true},
+		{l.Configuration{Out: l.Out("/tmp/glive_test.log")}, true},
+		{l.Configuration{Format: l.JSON}, true},
+		{l.Configuration{Format: l.TEXT}, true},
+		{l.Configuration{Format: l.TEXTColor}, true},
+		{l.Configuration{Format: l.JSONColor}, true},
+		{l.Configuration{Level: l.Level("invalid")}, false},
 	}
 	for _, c := range cases {
 		clean(t)
@@ -101,16 +102,10 @@ func TestSetupLogger(t *testing.T) {
 	}
 }
 
-func TestGetLogger(t *testing.T) {
-	setupLoggerTest(t, configTest)
-	r := l.Get()
-	assert.NotNil(t, r)
-	logTest(r)
-}
-
 func TestNewLogger(t *testing.T) {
 	setupLoggerTest(t, configTest)
-	r := l.New()
+	r, err := l.New()
+	assert.Nil(t, err)
 	assert.NotNil(t, r)
 	logTest(r)
 }
@@ -126,7 +121,7 @@ func TestNewLoggerByConfig(t *testing.T) {
 }
 
 func TestNewLoggerByInvalidLevelConfig(t *testing.T) {
-	l, err := NewByConfig(&Configuration{Level: l.Level(99)})
+	l, err := NewByConfig(&l.Configuration{Level: l.Level(99)})
 	assert.NotNil(t, err)
 	assert.Nil(t, l)
 }
@@ -172,25 +167,18 @@ func TestFormatSet(t *testing.T) {
 	assert.Equal(t, originalValue, f.String())
 }
 
-func TestSetupLoggerErrInvalidProvider(t *testing.T) {
-	clean(t)
-	config := &Configuration{}
-	assert.Panics(t, func() {
-		NewByConfig(config)
-	})
-}
-
 func TestNewLoggerSuccess(t *testing.T) {
 	cases := []struct {
-		config Configuration
+		config l.Configuration
 	}{
-		{Configuration{}},
+		{l.Configuration{}},
 	}
 	for _, c := range cases {
 		clean(t)
 		setupErr := Setup(&c.config)
 		assert.Nil(t, setupErr)
-		logger := New()
+		logger, err := New()
+		assert.Nil(t, err)
 		assert.NotNil(t, logger)
 		assert.NotNil(t, logger.(*logrusLogger).logger)
 		logger.Debug("DebugMessage", l.Struct("config", c.config))
@@ -225,7 +213,8 @@ func BenchmarkMySetupLogrusLogger(b *testing.B) {
 }
 
 func myNewLogger(t assert.TestingT) l.Logger {
-	l := New()
+	l, err := New()
+	assert.Nil(t, err)
 	assert.NotNil(t, l)
 	return l
 }

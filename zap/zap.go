@@ -1,181 +1,298 @@
-package l
+package zap
 
 import (
+	"fmt"
+	"github.com/rjansen/l"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"io/ioutil"
 	"os"
 	"time"
 )
 
 var (
-	zapFactory zap.Logger
+	defaultConfig *zapConfig
 )
 
-func (f Format) toZapEncoder() zap.Encoder {
-	switch f {
-	case JSON:
-		return zap.NewJSONEncoder()
-	default:
-		return zap.NewTextEncoder()
+func newFieldProvider() *zapFieldProvider {
+	return new(zapFieldProvider)
+}
+
+type zapField struct {
+	zapcore.Field
+}
+
+func (f zapField) Key() string {
+	return f.Field.Key
+}
+
+func (f zapField) Val() interface{} {
+	//TODO: Vaidate this approach
+	if f.Interface != nil {
+		return f.Interface
 	}
-}
-
-func (o Out) toZapOut() zap.Option {
-	switch o {
-	case STDOUT:
-		return zap.Output(os.Stdout)
-	case STDERR:
-		return zap.Output(os.Stderr)
-	case DISCARD:
-		return zap.DiscardOutput
-	default:
-		fileOutput, _ := getOutput(o)
-		zapOutput := zap.AddSync(fileOutput)
-		return zap.Output(zapOutput)
+	if f.Integer > 0 {
+		return f.Integer
 	}
+	return f.String
 }
 
-func (n Level) toZapLevel() zap.Level {
-	switch n {
-	case DEBUG:
-		return zap.DebugLevel
-	case INFO:
-		return zap.InfoLevel
-	case WARN:
-		return zap.WarnLevel
-	case ERROR:
-		return zap.ErrorLevel
-	case PANIC:
-		return zap.PanicLevel
-	case FATAL:
-		return zap.FatalLevel
-	default:
-		return zap.FatalLevel
-	}
+func (f zapField) Type() l.FieldType {
+	return l.FieldType(f.Field.Type)
 }
 
-type zapLogger struct {
-	baseLogger
-	logger zap.Logger
+func newZapField(f zapcore.Field) *zapField {
+	return &zapField{Field: f}
 }
 
-func (l zapLogger) toZapFields(fields ...Field) []zap.Field {
-	var zapFields []zap.Field
+type zapFieldProvider struct {
+}
+
+func (zapFieldProvider) String(key string, val string) l.Field {
+	return newZapField(zap.String(key, val))
+}
+
+func (zapFieldProvider) Bytes(key string, val []byte) l.Field {
+	return newZapField(zap.Binary(key, val))
+}
+
+func (zapFieldProvider) Int(key string, val int) l.Field {
+	return newZapField(zap.Int(key, val))
+}
+
+func (zapFieldProvider) Int32(key string, val int32) l.Field {
+	return newZapField(zap.Int32(key, val))
+}
+
+func (zapFieldProvider) Int64(key string, val int64) l.Field {
+	return newZapField(zap.Int64(key, val))
+}
+
+func (zapFieldProvider) Float(key string, val float32) l.Field {
+	return newZapField(zap.Float32(key, val))
+}
+
+func (zapFieldProvider) Float64(key string, val float64) l.Field {
+	return newZapField(zap.Float64(key, val))
+}
+
+func (zapFieldProvider) Duration(key string, val time.Duration) l.Field {
+	return newZapField(zap.Duration(key, val))
+}
+
+func (zapFieldProvider) Time(key string, val time.Time) l.Field {
+	return newZapField(zap.Time(key, val))
+}
+
+func (zapFieldProvider) Bool(key string, val bool) l.Field {
+	return newZapField(zap.Bool(key, val))
+}
+
+func (zapFieldProvider) Struct(key string, val interface{}) l.Field {
+	return newZapField(zap.Any(key, val))
+}
+
+func (zapFieldProvider) Slice(key string, val interface{}) l.Field {
+	return newZapField(zap.Any(key, val))
+}
+
+func (zapFieldProvider) Error(val error) l.Field {
+	return newZapField(zap.Error(val))
+}
+
+func toZapFields(fields ...l.Field) []zapcore.Field {
+	var zapFields []zapcore.Field
 	for _, v := range fields {
-		switch v.valType {
-		case IntField:
-			zapFields = append(zapFields, zap.Int(v.key, v.val.(int)))
-		case Int64Field:
-			zapFields = append(zapFields, zap.Int64(v.key, v.val.(int64)))
-		case StringField:
-			zapFields = append(zapFields, zap.String(v.key, v.val.(string)))
-		case BytesField:
-			//TODO: String cast is too slow
-			zapFields = append(zapFields, zap.String(v.key, string(v.val.([]byte))))
-		case BoolField:
-			zapFields = append(zapFields, zap.Bool(v.key, v.val.(bool)))
-		case FloatField, Float64Field:
-			zapFields = append(zapFields, zap.Float64(v.key, v.val.(float64)))
-		case DurationField:
-			zapFields = append(zapFields, zap.Duration(v.key, v.val.(time.Duration)))
-		case TimeField:
-			zapFields = append(zapFields, zap.Time(v.key, v.val.(time.Time)))
-		case ErrorField:
-			zapFields = append(zapFields, zap.Error(v.val.(error)))
-		default:
-			zapFields = append(zapFields, zap.Object(v.key, v.val))
-		}
+		zapFields = append(zapFields, v.(*zapField).Field)
 	}
 	return zapFields
 }
 
-func (l zapLogger) Debug(message string, fields ...Field) {
+type zapLogger struct {
+	l.BaseLogger
+	logger *zap.Logger
+}
+
+func (l *zapLogger) WithFields(fields ...l.Field) l.Logger {
+	return &zapLogger{
+		logger: l.logger.With(toZapFields(fields...)...),
+	}
+}
+
+func (l zapLogger) Debug(message string, fields ...l.Field) {
 	if len(fields) > 0 {
-		l.logger.Debug(message, l.toZapFields(fields...)...)
+		l.logger.Debug(message, toZapFields(fields...)...)
 	} else {
 		l.logger.Debug(message)
 	}
 }
 
-func (l zapLogger) Info(message string, fields ...Field) {
+func (l zapLogger) Info(message string, fields ...l.Field) {
 	if len(fields) > 0 {
-		l.logger.Info(message, l.toZapFields(fields...)...)
+		l.logger.Info(message, toZapFields(fields...)...)
 	} else {
 		l.logger.Info(message)
 	}
 }
 
-func (l zapLogger) Warn(message string, fields ...Field) {
+func (l zapLogger) Warn(message string, fields ...l.Field) {
 	if len(fields) > 0 {
-		l.logger.Info(message, l.toZapFields(fields...)...)
+		l.logger.Info(message, toZapFields(fields...)...)
 	} else {
 		l.logger.Warn(message)
 	}
 }
 
-func (l zapLogger) Error(message string, fields ...Field) {
+func (l zapLogger) Error(message string, fields ...l.Field) {
 	if len(fields) > 0 {
-		l.logger.Error(message, l.toZapFields(fields...)...)
+		l.logger.Error(message, toZapFields(fields...)...)
 	} else {
 		l.logger.Error(message)
 	}
 }
 
-func (l zapLogger) Panic(message string, fields ...Field) {
+func (l zapLogger) Panic(message string, fields ...l.Field) {
 	if len(fields) > 0 {
-		l.logger.Panic(message, l.toZapFields(fields...)...)
+		l.logger.Panic(message, toZapFields(fields...)...)
 	} else {
 		l.logger.Panic(message)
 	}
 }
 
-func (l zapLogger) Fatal(message string, fields ...Field) {
+func (l zapLogger) Fatal(message string, fields ...l.Field) {
 	if len(fields) > 0 {
-		l.logger.Fatal(message, l.toZapFields(fields...)...)
+		l.logger.Fatal(message, toZapFields(fields...)...)
 	} else {
 		l.logger.Fatal(message)
 	}
 }
 
-func setupZap(loggerConfig *Configuration) error {
-	loggerFactory = newZap
-	defaultConfig = loggerConfig
-	return nil
+func (zapLogger) String() string {
+	return "provider=zap"
 }
 
-func newZap(config Configuration) Logger {
-	zapConfig, _ := createZapConfig(config)
-	logger := new(zapLogger)
-	logger.logger = zap.New(
-		zapConfig.formatter,
-		zapConfig.level,
-		zapConfig.output,
+func Setup(loggerConfig *l.Configuration) error {
+	zapConfig, errs := toZapConfig(loggerConfig)
+	if errs != nil && len(errs) > 0 {
+		if loggerConfig.Debug {
+			fmt.Printf("l.zap.SetupErr Config=%s Errs=%v\n", zapConfig.String(), errs)
+		}
+		return fmt.Errorf("l.zap.SetupErr Config=%s Errs=%v", zapConfig.String(), errs)
+	}
+	defaultConfig = zapConfig
+	return l.Setup(New, newFieldProvider())
+}
+
+func New(field ...l.Field) (l.Logger, error) {
+	return create(defaultConfig, field...)
+}
+
+func NewByConfig(loggerConfig *l.Configuration, field ...l.Field) (l.Logger, error) {
+	zapConfig, errs := toZapConfig(loggerConfig)
+	if errs != nil && len(errs) > 0 {
+		if loggerConfig.Debug {
+			fmt.Printf("l.zap.NewByConfigErr Config=%s errs=%s\n", zapConfig.String(), errs)
+		}
+		return nil, fmt.Errorf("l.zap.NewByConfigErr Config=%s Errs=%v", zapConfig.String(), errs)
+	}
+	return create(zapConfig, field...)
+}
+
+func create(cfg *zapConfig, field ...l.Field) (l.Logger, error) {
+	if cfg.debug {
+		fmt.Printf("l.zap.Creating Config=%s\n", cfg.String())
+	}
+	logBackend := zap.New(
+		zapcore.NewCore(
+			cfg.formatter,
+			cfg.output,
+			cfg.level,
+		),
 	)
-	return logger
+	// for _, hook := range cfg.hooks {
+	// 	logBackend.Hooks.Add(hook)
+	// }
+	logger := new(zapLogger)
+	logger.logger = logBackend
+	// logger.logger.Data = toLogrusFields(field...)
+	if cfg.debug {
+		fmt.Printf("l.zap.Created Config=%s Logger=%s\n", cfg.String(), logger.String())
+	}
+	return logger, nil
 }
 
 type zapConfig struct {
-	output    zap.Option
-	formatter zap.Encoder
-	level     zap.Level
+	debug     bool
+	output    zapcore.WriteSyncer
+	formatter zapcore.Encoder
+	level     zapcore.Level
 }
 
-func createZapConfig(cfg Configuration) (zapConfig, []error) {
+func (l zapConfig) String() string {
+	return fmt.Sprintf("debug=%t level=%s hasFormatter=%t hasOutput=%t", l.debug, l.level.String(), l.formatter != nil, l.output != nil)
+}
+
+func toZapConfig(cfg *l.Configuration) (*zapConfig, []error) {
 	var errs []error
-	var output zap.Option
-	if cfg.Out == Out("") {
-		output = zap.Output(os.Stdout)
-	} else {
-		output = cfg.Out.toZapOut()
+	var output zapcore.WriteSyncer
+	switch cfg.Out {
+	case l.STDOUT, l.Out(""):
+		output = zapcore.AddSync(os.Stdout)
+	case l.STDERR:
+		output = zapcore.AddSync(os.Stderr)
+	case l.DISCARD:
+		output = zapcore.AddSync(ioutil.Discard)
+		// output =  &zaptest.Discarder{}
+	default:
+		fileOutput, err := cfg.Out.GetOutput()
+		//TODO: Think better
+		if err != nil {
+			panic(err)
+		}
+		output = zapcore.AddSync(fileOutput)
 	}
-	var level zap.Level
-	if cfg.Level == Level(0) {
+
+	var level zapcore.Level
+	switch cfg.Level {
+	case l.DEBUG:
 		level = zap.DebugLevel
-	} else {
-		level = cfg.Level.toZapLevel()
+	case l.INFO:
+		level = zap.InfoLevel
+	case l.WARN:
+		level = zap.WarnLevel
+	case l.ERROR:
+		level = zap.ErrorLevel
+	case l.PANIC:
+		level = zap.PanicLevel
+	case l.FATAL:
+		level = zap.FatalLevel
+	default:
+		level = zap.DebugLevel
 	}
-	return zapConfig{
+
+	var encoder zapcore.Encoder
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "name",
+		CallerKey:      "caller",
+		MessageKey:     "message",
+		StacktraceKey:  "stack",
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+	switch cfg.Format {
+	case l.TEXT:
+		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+	default:
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
+	}
+
+	return &zapConfig{
 		level:     level,
-		formatter: cfg.Format.toZapEncoder(),
+		formatter: encoder,
 		output:    output,
 	}, errs
 }

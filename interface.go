@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -27,6 +28,8 @@ const (
 
 	//FATAL is the fatal level logger
 	FATAL Level = "fatal"
+	//PANIC is the panic level logger
+	PANIC Level = "panic"
 	//ERROR is the error level logger
 	ERROR Level = "error"
 	//WARN is the warn level logger
@@ -40,21 +43,23 @@ const (
 	StringField FieldType = iota
 	//BytesField is a constant for byte slice logger fields
 	BytesField
-	//IntField is a constant for string logger fields
+	//IntField is a constant for int logger fields
 	IntField
-	//Int64Field is a constant for string logger fields
+	//Int32Field is a constant for int32 logger fields
+	Int32Field
+	//Int64Field is a constant for int64 logger fields
 	Int64Field
-	//FloatField is a constant for string logger fields
+	//FloatField is a constant for float32 logger fields
 	FloatField
-	//Float64Field is a constant for string logger fields
+	//Float64Field is a constant for float64 logger fields
 	Float64Field
 	//DurationField is a constant for duration logger fields
 	DurationField
 	//TimeField is a constant for time logger fields
 	TimeField
-	//BoolField is a constant for string logger fields
+	//BoolField is a constant for bool logger fields
 	BoolField
-	//StructField is a constant for string logger fields
+	//StructField is a constant for dynamic logger fields
 	StructField
 	//SliceField is a constant for slice logger fields
 	SliceField
@@ -62,8 +67,70 @@ const (
 	ErrorField
 )
 
-//Provider is the type for create loggers
-type Provider func(...Field) Logger
+//Hooks is the type to configure an create hooks for the logger implementation
+type Hooks struct {
+	Syslog SocketHook `json:"syslog" mapstructure:"syslog"`
+	Gelf   SocketHook `json:"gelf" mapstructure:"gelf"`
+	Stdout bool       `json:"stdout" mapstructure:"stdout"`
+}
+
+func (h Hooks) String() string {
+	return fmt.Sprintf("Syslog=%s Gelf=%s Stdout=%t", h.Syslog.String(), h.Gelf.String(), h.Stdout)
+}
+
+//SocketHook is a hook that intent to sends data over network sockets
+type SocketHook struct {
+	Socket  string `json:"socket" mapstructure:"socket"`
+	Address string `json:"addr" mapstructure:"addr"`
+	Level   string `json:"level" mapstructure:"level"`
+}
+
+func (s SocketHook) String() string {
+	return fmt.Sprintf("Socket=%s Address=%s Level=%s", s.Socket, s.Address, s.Level)
+}
+
+//Configuration holds the log beahvior parameters
+type Configuration struct {
+	Debug  bool   `json:"debug" mapstructure:"debug"`
+	Level  Level  `json:"level" mapstructure:"level"`
+	Format Format `json:"format" mapstructure:"format"`
+	Out    Out    `json:"out" mapstructure:"out"`
+	Hooks  Hooks  `json:"hooks" mapstructure:"hooks"`
+}
+
+func (l Configuration) String() string {
+	return fmt.Sprintf("Level=%s Format=%s Out=%s Hooks=%s", l.Level, l.Format, l.Out, l.Hooks)
+}
+
+//Provider is the contract for logger factories
+type Provider func(...Field) (Logger, error)
+
+//FieldProvider is the contract for logger fields factories
+type FieldProvider interface {
+	String(string, string) Field
+	Bytes(string, []byte) Field
+	Int(string, int) Field
+	Int32(string, int32) Field
+	Int64(string, int64) Field
+	Float(string, float32) Field
+	Float64(string, float64) Field
+	Duration(string, time.Duration) Field
+	Time(string, time.Time) Field
+	Bool(string, bool) Field
+	Struct(string, interface{}) Field
+	Slice(string, interface{}) Field
+	Error(error) Field
+}
+
+//FieldType is a type identifier for logger fields
+type FieldType int8
+
+//Field is a struct to send paramaters to log messages
+type Field interface {
+	Key() string
+	Val() interface{}
+	Type() FieldType
+}
 
 //Out is the type for logger writer config
 type Out string
@@ -135,26 +202,20 @@ func (f *Format) Set(value string) error {
 	return nil
 }
 
-//FieldType is a type identifier for logger fields
-type FieldType int8
-
-//Field is a struct to send paramaters to log messages
-type Field struct {
-	Key     string
-	Val     interface{}
-	ValType FieldType
-}
-
 //Logger is an interface to write log messages
 type Logger interface {
 	Level() Level
 	Enabled(Level) bool
+	WithFields(...Field) Logger
 
 	Debug(string, ...Field)
 	Info(string, ...Field)
 	Warn(string, ...Field)
 	Error(string, ...Field)
+	Panic(string, ...Field)
 	Fatal(string, ...Field)
+
+	String() string
 }
 
 type BaseLogger struct {
