@@ -12,21 +12,29 @@ import (
 
 var (
 	defaultConfig *zapConfig
+	lConfig       *l.Configuration
 )
 
-func newFieldProvider() *zapFieldProvider {
-	return new(zapFieldProvider)
+func newFieldAdapter() *ZapFieldAdapter {
+	return new(ZapFieldAdapter)
 }
 
-type zapField struct {
-	zapcore.Field
+// type LazyZapField struct {
+// 	zapcore.Field
+// 	Producer func() zapcore.Field
+// }
+
+// func (LazyZapField) Key() {
+
+// }
+
+type ZapField zapcore.Field
+
+func (f ZapField) Name() string {
+	return f.Key
 }
 
-func (f zapField) Key() string {
-	return f.Field.Key
-}
-
-func (f zapField) Val() interface{} {
+func (f ZapField) Value() interface{} {
 	//TODO: Vaidate this approach
 	if f.Interface != nil {
 		return f.Interface
@@ -37,73 +45,72 @@ func (f zapField) Val() interface{} {
 	return f.String
 }
 
-func (f zapField) Type() l.FieldType {
-	return l.FieldType(f.Field.Type)
+type ZapFieldAdapter struct {
 }
 
-func newZapField(f zapcore.Field) *zapField {
-	return &zapField{Field: f}
+func (ZapFieldAdapter) String(key string, val string) l.Field {
+	return ZapField(zap.String(key, val))
 }
 
-type zapFieldProvider struct {
+func (ZapFieldAdapter) Bytes(key string, val []byte) l.Field {
+	return ZapField(zap.Binary(key, val))
 }
 
-func (zapFieldProvider) String(key string, val string) l.Field {
-	return newZapField(zap.String(key, val))
+func (ZapFieldAdapter) Int(key string, val int) l.Field {
+	return ZapField(zap.Int(key, val))
 }
 
-func (zapFieldProvider) Bytes(key string, val []byte) l.Field {
-	return newZapField(zap.Binary(key, val))
+func (ZapFieldAdapter) Int32(key string, val int32) l.Field {
+	return ZapField(zap.Int32(key, val))
 }
 
-func (zapFieldProvider) Int(key string, val int) l.Field {
-	return newZapField(zap.Int(key, val))
+func (ZapFieldAdapter) Int64(key string, val int64) l.Field {
+	return ZapField(zap.Int64(key, val))
 }
 
-func (zapFieldProvider) Int32(key string, val int32) l.Field {
-	return newZapField(zap.Int32(key, val))
+func (ZapFieldAdapter) Float(key string, val float32) l.Field {
+	return ZapField(zap.Float32(key, val))
 }
 
-func (zapFieldProvider) Int64(key string, val int64) l.Field {
-	return newZapField(zap.Int64(key, val))
+func (ZapFieldAdapter) Float64(key string, val float64) l.Field {
+	return ZapField(zap.Float64(key, val))
 }
 
-func (zapFieldProvider) Float(key string, val float32) l.Field {
-	return newZapField(zap.Float32(key, val))
+func (ZapFieldAdapter) Duration(key string, val time.Duration) l.Field {
+	return ZapField(zap.Duration(key, val))
 }
 
-func (zapFieldProvider) Float64(key string, val float64) l.Field {
-	return newZapField(zap.Float64(key, val))
+func (ZapFieldAdapter) Time(key string, val time.Time) l.Field {
+	return ZapField(zap.Time(key, val))
 }
 
-func (zapFieldProvider) Duration(key string, val time.Duration) l.Field {
-	return newZapField(zap.Duration(key, val))
+func (ZapFieldAdapter) Bool(key string, val bool) l.Field {
+	return ZapField(zap.Bool(key, val))
 }
 
-func (zapFieldProvider) Time(key string, val time.Time) l.Field {
-	return newZapField(zap.Time(key, val))
+func (ZapFieldAdapter) Error(val error) l.Field {
+	return ZapField(zap.Error(val))
 }
 
-func (zapFieldProvider) Bool(key string, val bool) l.Field {
-	return newZapField(zap.Bool(key, val))
+func (ZapFieldAdapter) Struct(key string, val interface{}) l.Field {
+	return ZapField(zap.Any(key, val))
 }
 
-func (zapFieldProvider) Struct(key string, val interface{}) l.Field {
-	return newZapField(zap.Any(key, val))
-}
-
-func (zapFieldProvider) Slice(key string, val interface{}) l.Field {
-	return newZapField(zap.Any(key, val))
-}
-
-func (zapFieldProvider) Error(val error) l.Field {
-	return newZapField(zap.Error(val))
+func (ZapFieldAdapter) Slice(key string, val interface{}) l.Field {
+	return ZapField(zap.Any(key, val))
 }
 
 func toZapFields(fields ...l.Field) []zapcore.Field {
-	var zapFields []zapcore.Field
-	for _, v := range fields {
-		zapFields = append(zapFields, v.(*zapField).Field)
+	fieldsLen := len(fields)
+	if fieldsLen <= 0 {
+		return nil
+	}
+	zapFields := make([]zapcore.Field, fieldsLen)
+	// var zapFields []zapcore.Field
+	for i, v := range fields {
+		field := zapcore.Field(v.(ZapField))
+		zapFields[i] = field
+		// zapFields = append(zapFields, field)
 	}
 	return zapFields
 }
@@ -113,57 +120,45 @@ type zapLogger struct {
 	logger *zap.Logger
 }
 
-func (l *zapLogger) WithFields(fields ...l.Field) l.Logger {
+func (l zapLogger) WithFields(fields ...l.Field) l.Logger {
 	return &zapLogger{
 		logger: l.logger.With(toZapFields(fields...)...),
 	}
 }
 
 func (l zapLogger) Debug(message string, fields ...l.Field) {
-	if len(fields) > 0 {
-		l.logger.Debug(message, toZapFields(fields...)...)
-	} else {
-		l.logger.Debug(message)
+	if ce := l.logger.Check(zap.DebugLevel, message); ce != nil {
+		ce.Write(toZapFields(fields...)...)
 	}
 }
 
 func (l zapLogger) Info(message string, fields ...l.Field) {
-	if len(fields) > 0 {
-		l.logger.Info(message, toZapFields(fields...)...)
-	} else {
-		l.logger.Info(message)
+	if ce := l.logger.Check(zap.InfoLevel, message); ce != nil {
+		ce.Write(toZapFields(fields...)...)
 	}
 }
 
 func (l zapLogger) Warn(message string, fields ...l.Field) {
-	if len(fields) > 0 {
-		l.logger.Info(message, toZapFields(fields...)...)
-	} else {
-		l.logger.Warn(message)
+	if ce := l.logger.Check(zap.WarnLevel, message); ce != nil {
+		ce.Write(toZapFields(fields...)...)
 	}
 }
 
 func (l zapLogger) Error(message string, fields ...l.Field) {
-	if len(fields) > 0 {
-		l.logger.Error(message, toZapFields(fields...)...)
-	} else {
-		l.logger.Error(message)
+	if ce := l.logger.Check(zap.ErrorLevel, message); ce != nil {
+		ce.Write(toZapFields(fields...)...)
 	}
 }
 
 func (l zapLogger) Panic(message string, fields ...l.Field) {
-	if len(fields) > 0 {
-		l.logger.Panic(message, toZapFields(fields...)...)
-	} else {
-		l.logger.Panic(message)
+	if ce := l.logger.Check(zap.PanicLevel, message); ce != nil {
+		ce.Write(toZapFields(fields...)...)
 	}
 }
 
 func (l zapLogger) Fatal(message string, fields ...l.Field) {
-	if len(fields) > 0 {
-		l.logger.Fatal(message, toZapFields(fields...)...)
-	} else {
-		l.logger.Fatal(message)
+	if ce := l.logger.Check(zap.FatalLevel, message); ce != nil {
+		ce.Write(toZapFields(fields...)...)
 	}
 }
 
@@ -179,21 +174,21 @@ func Setup(loggerConfig *l.Configuration) error {
 		}
 		return fmt.Errorf("l.zap.SetupErr Config=%s Errs=%v", zapConfig.String(), errs)
 	}
+	lConfig = loggerConfig
 	defaultConfig = zapConfig
-	return l.Setup(New, newFieldProvider())
+	return l.Setup(lConfig, New, newFieldAdapter())
 }
 
-func New(field ...l.Field) (l.Logger, error) {
-	return create(defaultConfig, field...)
-}
-
-func NewByConfig(loggerConfig *l.Configuration, field ...l.Field) (l.Logger, error) {
+func New(loggerConfig *l.Configuration, field ...l.Field) (l.Logger, error) {
+	if lConfig == loggerConfig {
+		return create(defaultConfig, field...)
+	}
 	zapConfig, errs := toZapConfig(loggerConfig)
 	if errs != nil && len(errs) > 0 {
 		if loggerConfig.Debug {
-			fmt.Printf("l.zap.NewByConfigErr Config=%s errs=%s\n", zapConfig.String(), errs)
+			fmt.Printf("l.zap.NewErr Config=%s errs=%s\n", zapConfig.String(), errs)
 		}
-		return nil, fmt.Errorf("l.zap.NewByConfigErr Config=%s Errs=%v", zapConfig.String(), errs)
+		return nil, fmt.Errorf("l.zap.NewErr Config=%s Errs=%v", zapConfig.String(), errs)
 	}
 	return create(zapConfig, field...)
 }
@@ -214,7 +209,6 @@ func create(cfg *zapConfig, field ...l.Field) (l.Logger, error) {
 	// }
 	logger := new(zapLogger)
 	logger.logger = logBackend
-	// logger.logger.Data = toLogrusFields(field...)
 	if cfg.debug {
 		fmt.Printf("l.zap.Created Config=%s Logger=%s\n", cfg.String(), logger.String())
 	}
@@ -291,6 +285,7 @@ func toZapConfig(cfg *l.Configuration) (*zapConfig, []error) {
 	}
 
 	return &zapConfig{
+		debug:     cfg.Debug,
 		level:     level,
 		formatter: encoder,
 		output:    output,

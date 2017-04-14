@@ -8,87 +8,100 @@ import (
 var (
 	//ErrInvalidProvider is the err raised when an invalid provider was provided
 	ErrInvalidProvider = errors.New("l.ErrInvalidProvider Message='The configured provider is invalid")
-	//ErrInvalidFieldProvider is the err raised when an invalid field provider was provided
-	ErrInvalidFieldProvider = errors.New("l.ErrInvalidFieldProvider Message='The configured field provider is invalid")
+	//ErrInvalidFieldAdapter is the err raised when an invalid field adapter was provided
+	ErrInvalidFieldAdapter = errors.New("l.ErrInvalidFieldAdapter Message='The configured field adapter is invalid")
 	//ErrInvalidSetup is raised when the Setup method does not call or the provider setup is invalid
 	ErrInvalidSetup = errors.New("l.ErrInvalidSetup Message='You must call the provider setup function before execute this action'")
+	defaultConfig   *Configuration
 	loggerProvider  Provider
-	fieldProvider   FieldProvider
+	fieldAdapter    FieldAdapter
 )
 
 //Setup initializes the logger system
-func Setup(p Provider, fp FieldProvider) error {
+func Setup(c *Configuration, p Provider, a FieldAdapter) error {
 	if p == nil {
 		return ErrInvalidProvider
 	}
-	if fp == nil {
-		return ErrInvalidFieldProvider
+	if a == nil {
+		return ErrInvalidFieldAdapter
 	}
+	if c == nil {
+		c = new(Configuration)
+	}
+	defaultConfig = c
 	loggerProvider = p
-	fieldProvider = fp
+	fieldAdapter = a
 	return nil
 }
 
-func setted() bool {
-	return loggerProvider != nil
+func Setted() bool {
+	return loggerProvider != nil && fieldAdapter != nil
 }
 
 //New creates a logger implemetor with the provided fields
-func New(field ...Field) (Logger, error) {
-	if !setted() {
+func New(fields ...Field) (Logger, error) {
+	if !Setted() {
 		return nil, ErrInvalidSetup
 	}
-	return loggerProvider(field...)
+	return loggerProvider(defaultConfig, fields...)
+}
+
+//NewByConfig creates a logger implemetor with the provided fields and configuration
+func NewByConfig(cfg *Configuration, fields ...Field) (Logger, error) {
+	if !Setted() {
+		return nil, ErrInvalidSetup
+	}
+	return loggerProvider(cfg, fields...)
 }
 
 func String(key, val string) Field {
-	return fieldProvider.String(key, val)
+	return fieldAdapter.String(key, val)
 }
 
 func Bytes(key string, val []byte) Field {
-	return fieldProvider.Bytes(key, val)
+	return fieldAdapter.Bytes(key, val)
 }
 
 func Int(key string, val int) Field {
-	return fieldProvider.Int(key, val)
+	return fieldAdapter.Int(key, val)
 }
 
 func Int32(key string, val int32) Field {
-	return fieldProvider.Int32(key, val)
+	return fieldAdapter.Int32(key, val)
 }
 
 func Int64(key string, val int64) Field {
-	return fieldProvider.Int64(key, val)
+	return fieldAdapter.Int64(key, val)
 }
 
 func Float(key string, val float32) Field {
-	return fieldProvider.Float(key, val)
+	return fieldAdapter.Float(key, val)
 }
 
 func Float64(key string, val float64) Field {
-	return fieldProvider.Float64(key, val)
+	return fieldAdapter.Float64(key, val)
 }
 
 func Bool(key string, val bool) Field {
-	return fieldProvider.Bool(key, val)
+	return fieldAdapter.Bool(key, val)
 }
 
 func Duration(key string, val time.Duration) Field {
-	return fieldProvider.Duration(key, val)
+	return fieldAdapter.Duration(key, val)
 }
 
 func Time(key string, val time.Time) Field {
-	return fieldProvider.Time(key, val)
-}
-
-func Struct(key string, val interface{}) Field {
-	return fieldProvider.Struct(key, val)
-}
-
-func Slice(key string, val interface{}) Field {
-	return fieldProvider.Slice(key, val)
+	return fieldAdapter.Time(key, val)
 }
 
 func Err(val error) Field {
-	return fieldProvider.Error(val)
+	return fieldAdapter.Error(val)
+}
+
+func Struct(key string, val interface{}) Field {
+	return fieldAdapter.Struct(key, val)
+}
+
+func Slice(key string, val interface{}) Field {
+	return fieldAdapter.Slice(key, val)
 }

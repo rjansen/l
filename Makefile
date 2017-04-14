@@ -9,6 +9,7 @@ PKGS        	:= $(shell go list ./... | grep -v /vendor/)
 
 #Test and Benchmark Parameters
 TEST_PKGS ?= 
+BENCHS ?= .
 COVERAGE_FILE := $(NAME).coverage
 COVERAGE_HTML := $(NAME).coverage.html
 PKG_COVERAGE := $(NAME).pkg.coverage
@@ -17,26 +18,21 @@ PKG_COVERAGE := $(NAME).pkg.coverage
 default: build
 
 .PHONY: install
-install: install_sw_deps sync_deps
+install: deps
 	@echo "$(REPO) installed successfully" 
 
-.PHONY: install_sw_deps
-install_sw_deps:
+.PHONY: deps
+deps:
 	brew install go
 	go get -u github.com/kardianos/govendor
+	govendor sync
 
-.PHONY: install_deps
-install_deps:
-	govendor fetch github.com/matryer/resync
-	govendor fetch github.com/Sirupsen/logrus/...
-	govendor fetch github.com/uber-go/zap
-
-.PHONY: sync_deps
-sync_deps:
+.PHONY: sync
+sync:
 	govendor sync
 
 .PHONY: all
-all: build test bench_all coverage
+all: build test bench coverage
 
 .PHONY: build
 build:
@@ -80,12 +76,12 @@ bench:
 	@if [ "$(TEST_PKGS)" == "" ]; then \
 	    echo "Benchmark all Pkgs" ;\
 	    for tstpkg in $(PKGS); do \
-		    go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $$tstpkg || exit 501;\
+		    go test -bench=$(BENCHS) -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $$tstpkg || exit 501;\
 		done; \
 	else \
 	    echo "Benchmark Selected Pkgs=$(TEST_PKGS)" ;\
 	    for tstpkg in $(TEST_PKGS); do \
-		    go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $(REPO)/$$tstpkg || exit 501;\
+		    go test -bench=$(BENCHS) -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $(REPO)/$$tstpkg || exit 501;\
 		done; \
 	fi
 

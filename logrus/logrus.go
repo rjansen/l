@@ -13,37 +13,24 @@ import (
 
 var (
 	defaultConfig *logrusConfig
+	lConfig       *l.Configuration
 )
 
-func logrusFormatter(f l.Format) logrus.Formatter {
-	switch f {
-	case l.JSON:
-		return new(logrus.JSONFormatter)
-	default:
-		return &logrus.TextFormatter{ForceColors: false, DisableColors: true, FullTimestamp: true}
-	}
-}
-
-func newField(key string, valType l.FieldType, val interface{}) logrusField {
-	return logrusField{key: key, val: val, valType: valType}
+func newField(name string, value interface{}) logrusField {
+	return logrusField{name: name, value: value}
 }
 
 type logrusField struct {
-	key     string
-	val     interface{}
-	valType l.FieldType
+	name  string
+	value interface{}
 }
 
-func (f logrusField) Key() string {
-	return f.key
+func (f logrusField) Name() string {
+	return f.name
 }
 
-func (f logrusField) Val() interface{} {
-	return f.val
-}
-
-func (f logrusField) Type() l.FieldType {
-	return f.valType
+func (f logrusField) Value() interface{} {
+	return f.value
 }
 
 func newFieldProvider() *logrusFieldProvider {
@@ -54,55 +41,55 @@ type logrusFieldProvider struct {
 }
 
 func (logrusFieldProvider) String(key string, val string) l.Field {
-	return newField(key, l.StringField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Bytes(key string, val []byte) l.Field {
-	return newField(key, l.BytesField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Int(key string, val int) l.Field {
-	return newField(key, l.IntField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Int32(key string, val int32) l.Field {
-	return newField(key, l.Int32Field, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Int64(key string, val int64) l.Field {
-	return newField(key, l.Int64Field, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Float(key string, val float32) l.Field {
-	return newField(key, l.FloatField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Float64(key string, val float64) l.Field {
-	return newField(key, l.Float64Field, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Duration(key string, val time.Duration) l.Field {
-	return newField(key, l.DurationField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Time(key string, val time.Time) l.Field {
-	return newField(key, l.TimeField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Bool(key string, val bool) l.Field {
-	return newField(key, l.BoolField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Struct(key string, val interface{}) l.Field {
-	return newField(key, l.StructField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Slice(key string, val interface{}) l.Field {
-	return newField(key, l.SliceField, val)
+	return newField(key, val)
 }
 
 func (logrusFieldProvider) Error(val error) l.Field {
-	return newField("error", l.ErrorField, val)
+	return newField("error", val)
 }
 
 type logrusLogger struct {
@@ -117,60 +104,27 @@ func (l *logrusLogger) WithFields(fields ...l.Field) l.Logger {
 }
 
 func (l logrusLogger) Debug(message string, fields ...l.Field) {
-	// if l.logger.Level < logrus.DebugLevel {
-	// 	return
-	// }
-	if len(fields) <= 0 {
-		l.logger.Debug(message)
-	} else {
-		l.logger.WithFields(toLogrusFields(fields...)).Debug(message)
-	}
+	l.logger.WithFields(toLogrusFields(fields...)).Debug(message)
 }
 
 func (l logrusLogger) Info(message string, fields ...l.Field) {
-	// if l.logger.Level < logrus.InfoLevel {
-	// 	return
-	// }
-	if len(fields) <= 0 {
-		l.logger.Info(message)
-	} else {
-		l.logger.WithFields(toLogrusFields(fields...)).Info(message)
-	}
+	l.logger.WithFields(toLogrusFields(fields...)).Info(message)
 }
 
 func (l logrusLogger) Warn(message string, fields ...l.Field) {
-	// if l.logger.Level < logrus.WarnLevel {
-	// 	return
-	// }
-	if len(fields) <= 0 {
-		l.logger.Warn(message)
-	} else {
-		l.logger.WithFields(toLogrusFields(fields...)).Warn(message)
-	}
+	l.logger.WithFields(toLogrusFields(fields...)).Warn(message)
 }
 
 func (l logrusLogger) Error(message string, fields ...l.Field) {
-	if len(fields) <= 0 {
-		l.logger.Error(message)
-	} else {
-		l.logger.WithFields(toLogrusFields(fields...)).Error(message)
-	}
+	l.logger.WithFields(toLogrusFields(fields...)).Error(message)
 }
 
 func (l logrusLogger) Panic(message string, fields ...l.Field) {
-	if len(fields) <= 0 {
-		l.logger.Panic(message)
-	} else {
-		l.logger.WithFields(toLogrusFields(fields...)).Panic(message)
-	}
+	l.logger.WithFields(toLogrusFields(fields...)).Panic(message)
 }
 
 func (l logrusLogger) Fatal(message string, fields ...l.Field) {
-	if len(fields) <= 0 {
-		l.logger.Fatal(message)
-	} else {
-		l.logger.WithFields(toLogrusFields(fields...)).Fatal(message)
-	}
+	l.logger.WithFields(toLogrusFields(fields...)).Fatal(message)
 }
 
 func (logrusLogger) String() string {
@@ -189,14 +143,14 @@ func Setup(loggerConfig *l.Configuration) error {
 	logrus.SetFormatter(logrusConfig.formatter)
 	logrus.SetOutput(logrusConfig.output)
 	defaultConfig = logrusConfig
-	return l.Setup(New, newFieldProvider())
+	lConfig = loggerConfig
+	return l.Setup(lConfig, New, newFieldProvider())
 }
 
-func New(field ...l.Field) (l.Logger, error) {
-	return create(defaultConfig, field...)
-}
-
-func NewByConfig(loggerConfig *l.Configuration, field ...l.Field) (l.Logger, error) {
+func New(loggerConfig *l.Configuration, field ...l.Field) (l.Logger, error) {
+	if lConfig == loggerConfig {
+		return create(defaultConfig, field...)
+	}
 	logrusConfig, errs := toLogrusConfig(loggerConfig)
 	if errs != nil && len(errs) > 0 {
 		if loggerConfig.Debug {
@@ -208,9 +162,12 @@ func NewByConfig(loggerConfig *l.Configuration, field ...l.Field) (l.Logger, err
 }
 
 func toLogrusFields(fields ...l.Field) logrus.Fields {
+	if len(fields) <= 0 {
+		return nil
+	}
 	logrusFields := make(map[string]interface{})
 	for _, v := range fields {
-		logrusFields[v.Key()] = v.Val()
+		logrusFields[v.Name()] = v.Value()
 	}
 	return logrusFields
 }
@@ -268,10 +225,19 @@ func toLogrusConfig(cfg *l.Configuration) (*logrusConfig, []error) {
 	} else {
 		level = tmlLevel
 	}
+
+	var logrusFormatter logrus.Formatter
+	switch cfg.Format {
+	case l.JSON:
+		logrusFormatter = new(logrus.JSONFormatter)
+	default:
+		logrusFormatter = &logrus.TextFormatter{ForceColors: false, DisableColors: true, FullTimestamp: true}
+	}
+
 	return &logrusConfig{
 		debug:     cfg.Debug,
 		level:     level,
-		formatter: logrusFormatter(cfg.Format),
+		formatter: logrusFormatter,
 		output:    output,
 	}, errs
 }

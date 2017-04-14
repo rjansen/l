@@ -1,77 +1,112 @@
 package l
 
 import (
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
-func clean(t assert.TestingT) {
-	loggerProvider = nil
+var (
+	errMock = errors.New("ErrMock")
+	objMock = user{
+		Name:     "Mock User",
+		Email:    "user@mock.com",
+		Birthday: time.Date(1980, 1, 1, 12, 0, 0, 0, time.UTC),
+	}
+)
+
+type user struct {
+	Name     string    `json:"name"`
+	Email    string    `json:"email"`
+	Birthday time.Time `json:"birthday"`
 }
 
-func setupLoggerTest(t assert.TestingT, p Provider, f FieldProvider) {
-	clean(t)
-	setupErr := Setup(p, f)
-	assert.Nil(t, setupErr)
+func lFakeFields() []Field {
+	return []Field{
+		String("string", "string logger field"),
+		Bytes("bytes", []byte("[]byte logger field")),
+		Int("int", 1),
+		Int32("int32", 1),
+		Int64("int64", 2),
+		Float("float", 3.0),
+		Float64("float", 3.0),
+		Bool("bool", true),
+		Duration("duration", time.Second),
+		Time("time", time.Unix(0, 0)),
+		Err(errMock),
+	}
 }
 
-func newLoggerTest(t assert.TestingT, p Provider, f FieldProvider) Logger {
-	setupLoggerTest(t, p, f)
+func init() {
+	//DefaultConfig
+	setupErr := Setup(new(Configuration), DefaultLog, DefaultFieldAdapter())
+	if setupErr != nil {
+		panic(setupErr)
+	}
+}
+
+func newLogger(t assert.TestingT) Logger {
 	logger, err := New()
 	assert.Nil(t, err)
 	assert.NotNil(t, logger)
 	return logger
 }
 
-func logTest(logger Logger) {
+func newConfigLogger(t assert.TestingT, c *Configuration) Logger {
+	logger, err := NewByConfig(c)
+	assert.Nil(t, err)
+	assert.NotNil(t, logger)
+	return logger
+}
+
+func logTest(t assert.TestingT, logger Logger) {
 	logger.Debug("DebugMessage")
-	logger.Debug("DebugFieldsMessage",
-		String("Param1", "1"),
-		String("Param2", "2"),
-		String("Param3", "3"),
-	)
+	logger.Debug("DebugFieldsMessage", lFakeFields()...)
+
 	logger.Info("InfoMessage")
-	logger.Info("InfoFieldsMessage",
-		String("Param1", "1"),
-		String("Param2", "2"),
-		String("Param3", "3"),
-	)
+	logger.Info("InfoFieldsMessage", lFakeFields()...)
+
 	logger.Warn("WarnMessage")
-	logger.Warn("WarnFieldsMessage",
-		String("Param1", "1"),
-		String("Param2", "2"),
-		String("Param3", "3"),
-	)
+	logger.Warn("WarnFieldsMessage", lFakeFields()...)
+
 	logger.Error("ErrorMessage")
-	logger.Error("ErrorFieldsMessage",
-		String("Param1", "1"),
-		String("Param2", "2"),
-		String("Param3", "3"),
-	)
+	logger.Error("ErrorFieldsMessage", lFakeFields()...)
+
+	assert.NotPanics(t, func() {
+		logger.Panic("PanicErrorMessage")
+	})
+	assert.NotPanics(t, func() {
+		logger.Panic("PanicFieldsMessage", lFakeFields()...)
+	})
 }
 
 func TestSetupLogger(t *testing.T) {
 	cases := []struct {
-		provider      Provider
-		fieldProvider FieldProvider
-		err           error
+		provider     Provider
+		fieldAdapter FieldAdapter
+		err          error
 	}{
-		{newLogger, newFieldProvider(), nil},
-		{nil, newFieldProvider(), ErrInvalidProvider},
-		{newLogger, nil, ErrInvalidFieldProvider},
+		{DefaultLog, DefaultFieldAdapter(), nil},
+		{nil, DefaultFieldAdapter(), ErrInvalidProvider},
+		{DefaultLog, nil, ErrInvalidFieldAdapter},
 		{nil, nil, ErrInvalidProvider},
 	}
 	for _, c := range cases {
-		clean(t)
-		err := Setup(c.provider, c.fieldProvider)
+		err := Setup(new(Configuration), c.provider, c.fieldAdapter)
 		assert.Equal(t, c.err, err, fmt.Sprintf("Invalid err for data=%+v", c))
 	}
 }
 
 func TestNewLogger(t *testing.T) {
-	l := newLoggerTest(t, newLogger, newFieldProvider())
-	logTest(l)
+	l := newLogger(t)
+	logTest(t, l)
+}
+
+func TestNewConfigLogger(t *testing.T) {
+	l := newConfigLogger(t, &Configuration{Format: JSON, Out: STDOUT})
+	logTest(t, l)
 }
 
 func TestOutString(t *testing.T) {

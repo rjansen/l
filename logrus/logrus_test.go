@@ -11,76 +11,144 @@ import (
 	"time"
 )
 
-var (
-	configTest     = &l.Configuration{Format: l.TEXT, Out: l.DISCARD}
-	myLogrusConfig = &l.Configuration{Format: l.TEXT, Out: l.DISCARD}
+const (
+	messageMock = "This is a logrus long message mock"
 )
 
-func clean(t assert.TestingT) {
-	defaultConfig = nil
-	// loggerFactory = nil
-	reset(t)
+var (
+	errMock = errors.New("ErrLogrusMock")
+	objMock = user{
+		Name:     "Logrus Mock User",
+		Email:    "logrus.user@mock.com",
+		Birthday: time.Date(1980, 1, 1, 12, 0, 0, 0, time.UTC),
+	}
+	configTest    = &l.Configuration{Format: l.JSON, Out: l.DISCARD}
+	lLogrusConfig = &l.Configuration{Format: l.JSON, Out: l.DISCARD}
+)
+
+type user struct {
+	Name     string    `json:"name"`
+	Email    string    `json:"email"`
+	Birthday time.Time `json:"birthday"`
 }
 
-func reset(t assert.TestingT) {
-	// rootLogger = nil
-	// once.Reset()
+func lFakeFields() []l.Field {
+	return []l.Field{
+		l.String("string", "string logger field"),
+		l.Bytes("bytes", []byte("[]byte logger field")),
+		l.Int("int", 1),
+		l.Int32("int32", 1),
+		l.Int64("int64", 2),
+		l.Float("float", 3.0),
+		l.Float64("float", 3.0),
+		l.Bool("bool", true),
+		l.Duration("duration", time.Second),
+		l.Time("time", time.Now()),
+		l.Err(errMock),
+	}
 }
 
-func setupLoggerTest(t assert.TestingT, config *l.Configuration) {
-	clean(t)
+func logrusFakeFields() logrus.Fields {
+	return logrus.Fields{
+		"string":   "string logger field",
+		"bytes":    []byte("[]byte logger field"),
+		"int":      1,
+		"int32":    1,
+		"int64":    2,
+		"float":    3.0,
+		"float64":  float64(3.0),
+		"bool":     true,
+		"duration": time.Second,
+		"time":     time.Now(),
+		"error":    errMock,
+	}
+}
+
+func lSetup(t assert.TestingT, config *l.Configuration) {
 	setupErr := Setup(config)
 	assert.Nil(t, setupErr)
 }
 
-func newLoggerTest(t assert.TestingT, config *l.Configuration) l.Logger {
-	setupLoggerTest(t, config)
-	logger, err := New()
+func lNew(t assert.TestingT) l.Logger {
+	l, err := l.New()
 	assert.Nil(t, err)
-	assert.NotNil(t, logger)
-	return logger
+	assert.NotNil(t, l)
+	return l
 }
 
-func newLogrusByConfigTest(t assert.TestingT, config *l.Configuration) l.Logger {
-	logger, err := NewByConfig(config)
+func lNewByConfig(t assert.TestingT, c *l.Configuration) l.Logger {
+	l, err := l.NewByConfig(c)
 	assert.Nil(t, err)
-	assert.NotNil(t, logger)
-	return logger
+	assert.NotNil(t, l)
+	return l
 }
 
-func logTest(logger l.Logger) {
-	logger.Debug("DebugMessage")
-	logger.Debug("DebugFieldsMessage",
-		l.String("Param1", "1"),
-		l.String("Param2", "2"),
-		l.String("Param3", "3"),
-	)
-	logger.Info("InfoMessage")
-	logger.Info("InfoFieldsMessage",
-		l.String("Param1", "1"),
-		l.String("Param2", "2"),
-		l.String("Param3", "3"),
-	)
-	logger.Warn("WarnMessage")
-	logger.Warn("WarnFieldsMessage",
-		l.String("Param1", "1"),
-		l.String("Param2", "2"),
-		l.String("Param3", "3"),
-	)
-	logger.Error("ErrorMessage")
-	logger.Error("ErrorFieldsMessage",
-		l.String("Param1", "1"),
-		l.String("Param2", "2"),
-		l.String("Param3", "3"),
-	)
+func lSetupNew(t assert.TestingT, config *l.Configuration) l.Logger {
+	lSetup(t, config)
+	return lNew(t)
 }
 
-func TestSetupLogger(t *testing.T) {
+func logrusNew(t assert.TestingT) *logrus.Logger {
+	l := &logrus.Logger{
+		Level:     logrus.DebugLevel,
+		Formatter: new(logrus.JSONFormatter),
+		Hooks:     make(logrus.LevelHooks),
+		Out:       ioutil.Discard,
+	}
+	assert.NotNil(t, l)
+	return l
+}
+
+func lLog(t assert.TestingT, logger l.Logger) {
+	logger.Debug(messageMock)
+	logger.Debug(messageMock, lFakeFields()...)
+
+	logger.Info(messageMock)
+	logger.Info(messageMock, lFakeFields()...)
+
+	logger.Warn(messageMock)
+	logger.Warn(messageMock, lFakeFields()...)
+
+	logger.Error(messageMock)
+	logger.Error(messageMock, lFakeFields()...)
+
+	assert.Panics(t, func() {
+		logger.Panic(messageMock)
+	})
+	assert.Panics(t, func() {
+		logger.Panic(messageMock, lFakeFields()...)
+	})
+}
+
+func logrusLog(t assert.TestingT, logger *logrus.Logger) {
+	logger.Debug(messageMock)
+	logger.Debug(messageMock, logrusFakeFields())
+
+	logger.Info(messageMock)
+	logger.Info(messageMock, logrusFakeFields())
+
+	logger.Warn(messageMock)
+	logger.Warn(messageMock, logrusFakeFields())
+
+	logger.Error(messageMock)
+	logger.Error(messageMock, logrusFakeFields())
+
+	assert.Panics(t, func() {
+		logger.Panic(messageMock)
+	})
+	assert.Panics(t, func() {
+		logger.Panic(messageMock, logrusFakeFields())
+	})
+}
+
+func TestSetup(t *testing.T) {
 	cases := []struct {
 		config  l.Configuration
 		success bool
 	}{
-		{l.Configuration{}, true},
+		{*configTest, true},
+		{*lLogrusConfig, true},
+		{l.Configuration{Debug: true}, true},
 		{l.Configuration{Out: l.STDOUT}, true},
 		{l.Configuration{Out: l.STDERR}, true},
 		{l.Configuration{Out: l.DISCARD}, true},
@@ -92,7 +160,6 @@ func TestSetupLogger(t *testing.T) {
 		{l.Configuration{Level: l.Level("invalid")}, false},
 	}
 	for _, c := range cases {
-		clean(t)
 		err := Setup(&c.config)
 		if c.success {
 			assert.Nil(t, err, fmt.Sprintf("Not Nil for data=%+v", c))
@@ -102,230 +169,45 @@ func TestSetupLogger(t *testing.T) {
 	}
 }
 
-func TestNewLogger(t *testing.T) {
-	setupLoggerTest(t, configTest)
-	r, err := l.New()
-	assert.Nil(t, err)
-	assert.NotNil(t, r)
-	logTest(r)
-}
-
-func TestNewLogrusLogger(t *testing.T) {
-	l := newLoggerTest(t, configTest)
-	logTest(l)
-}
-
-func TestNewLoggerByConfig(t *testing.T) {
-	l := newLogrusByConfigTest(t, configTest)
-	logTest(l)
-}
-
-func TestNewLoggerByInvalidLevelConfig(t *testing.T) {
-	l, err := NewByConfig(&l.Configuration{Level: l.Level(99)})
-	assert.NotNil(t, err)
-	assert.Nil(t, l)
-}
-
-func TestOutString(t *testing.T) {
-	cases := []struct {
-		out l.Out
-	}{
-		{l.STDOUT},
-		{l.STDERR},
-		{l.DISCARD},
-		//{OUT("invalid"), false},
-	}
-	for _, c := range cases {
-		assert.NotNil(t, c.out.String())
-	}
-}
-
-func TestOutSet(t *testing.T) {
-	originalValue := "originalValue"
-	var o l.Out
-	assert.Nil(t, o.Set(originalValue))
-	assert.Equal(t, originalValue, o.String())
-}
-
-func TestFormatString(t *testing.T) {
-	cases := []struct {
-		format l.Format
-	}{
-		{l.JSON},
-		{l.TEXT},
-		{l.Format("invalid")},
-	}
-	for _, c := range cases {
-		assert.NotNil(t, c.format.String())
-	}
-}
-
-func TestFormatSet(t *testing.T) {
-	originalValue := "originalValue"
-	var f l.Format
-	assert.Nil(t, f.Set(originalValue))
-	assert.Equal(t, originalValue, f.String())
-}
-
-func TestNewLoggerSuccess(t *testing.T) {
+func TestNew(t *testing.T) {
 	cases := []struct {
 		config l.Configuration
+		err    error
 	}{
-		{l.Configuration{}},
+		{*configTest, nil},
+		{*lLogrusConfig, nil},
+		{l.Configuration{Debug: true, Out: l.DISCARD}, nil},
+		{l.Configuration{}, nil},
+		{l.Configuration{Format: l.TEXT}, nil},
 	}
 	for _, c := range cases {
-		clean(t)
-		setupErr := Setup(&c.config)
-		assert.Nil(t, setupErr)
-		logger, err := New()
-		assert.Nil(t, err)
+		logger := lSetupNew(t, &c.config)
 		assert.NotNil(t, logger)
 		assert.NotNil(t, logger.(*logrusLogger).logger)
-		logger.Debug("DebugMessage", l.Struct("config", c.config))
-		logger.Info("InfoMessage", l.Struct("config", c.config))
-		logger.Warn("WarnMessage", l.Struct("config", c.config))
-		logger.Error("ErrorMessage", l.Struct("config", c.config))
+		lLog(t, logger)
 	}
 }
 
-func logrusTestSetup() {
-	logrus.SetOutput(ioutil.Discard)
-	logrus.SetFormatter(new(logrus.TextFormatter))
-	logrus.SetLevel(logrus.DebugLevel)
-}
-
-func myLogrusTestSetup(t assert.TestingT) {
-	clean(t)
-	setupErr := Setup(myLogrusConfig)
-	assert.Nil(t, setupErr)
-}
-
-func BenchmarkSetupLogrusLogger(b *testing.B) {
-	for k := 0; k < b.N; k++ {
-		logrusTestSetup()
+func TestNewByConfig(t *testing.T) {
+	cases := []struct {
+		config l.Configuration
+		err    error
+	}{
+		{*configTest, nil},
+		{*lLogrusConfig, nil},
+		{l.Configuration{Out: l.DISCARD}, nil},
+		{l.Configuration{}, nil},
+	}
+	for _, c := range cases {
+		logger := lNewByConfig(t, &c.config)
+		assert.NotNil(t, logger)
+		assert.NotNil(t, logger.(*logrusLogger).logger)
+		lLog(t, logger)
 	}
 }
 
-func BenchmarkMySetupLogrusLogger(b *testing.B) {
-	for k := 0; k < b.N; k++ {
-		myLogrusTestSetup(b)
-	}
-}
-
-func myNewLogger(t assert.TestingT) l.Logger {
-	l, err := New()
-	assert.Nil(t, err)
-	assert.NotNil(t, l)
-	return l
-}
-
-func logrusNew(t assert.TestingT) *logrus.Logger {
-	l := logrus.New()
-	assert.NotNil(t, l)
-	return l
-}
-
-func BenchmarkNewLogrusLogger(b *testing.B) {
-	logrusTestSetup()
-
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logrusNew(b)
-		}
-	})
-}
-
-func BenchmarkMyNewLogrusLogger(b *testing.B) {
-	myLogrusTestSetup(b)
-
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			myNewLogger(b)
-		}
-	})
-}
-
-func BenchmarkLogrusFormatfLogger(b *testing.B) {
-	logrusTestSetup()
-	logger := logrusNew(b)
-
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Debugf("BenchamarkLogrusFormat[field1=%v field2=%v field3=%v field4=%v field5=%v field6=%v field7=%v field8=%v field9=%v field0=%v]",
-				"field1",
-				"field2",
-				"field3",
-				"field4",
-				"field5",
-				"field6",
-				"field7",
-				"field8",
-				"field9",
-				"field0",
-			)
-		}
-	})
-}
-
-func BenchmarkLogrusFieldsLogger(b *testing.B) {
-	logrusTestSetup()
-	logger := logrusNew(b)
-
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.WithFields(logrus.Fields{
-				"field1": "field1",
-				"field2": "field2",
-				"field3": "field3",
-				"field4": "field4",
-				"field5": "field5",
-				"field6": "field6",
-				"field7": "field7",
-				"field8": "field8",
-				"field9": "field9",
-				"field0": "field0",
-			}).Debug("BenchamarkLogrusFileds")
-		}
-	})
-}
-
-func BenchmarkMyLogrusFieldsLogger(b *testing.B) {
-	myLogrusTestSetup(b)
-	logger := myNewLogger(b)
-
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Debug("BenchamarkMyLogrusFileds",
-				l.String("field1", "field1"),
-				l.String("field2", "field2"),
-				l.String("field3", "field3"),
-				l.String("field4", "field4"),
-				l.String("field5", "field5"),
-				l.String("field6", "field6"),
-				l.String("field7", "field7"),
-				l.String("field8", "field8"),
-				l.String("field9", "field9"),
-				l.String("field0", "field0"),
-			)
-		}
-	})
-}
-
-var errExample = errors.New("fail")
-
-type user struct {
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-var _jane = user{
-	Name:      "Jane Doe",
-	Email:     "jane@test.com",
-	CreatedAt: time.Date(1980, 1, 1, 12, 0, 0, 0, time.UTC),
+func TestLogrusNew(t *testing.T) {
+	logger := logrusNew(t)
+	assert.NotNil(t, logger)
+	logrusLog(t, logger)
 }

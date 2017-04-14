@@ -38,33 +38,6 @@ const (
 	INFO Level = "info"
 	//DEBUG is the debug level logger
 	DEBUG Level = "debug"
-
-	//StringField is a constant for string logger fields
-	StringField FieldType = iota
-	//BytesField is a constant for byte slice logger fields
-	BytesField
-	//IntField is a constant for int logger fields
-	IntField
-	//Int32Field is a constant for int32 logger fields
-	Int32Field
-	//Int64Field is a constant for int64 logger fields
-	Int64Field
-	//FloatField is a constant for float32 logger fields
-	FloatField
-	//Float64Field is a constant for float64 logger fields
-	Float64Field
-	//DurationField is a constant for duration logger fields
-	DurationField
-	//TimeField is a constant for time logger fields
-	TimeField
-	//BoolField is a constant for bool logger fields
-	BoolField
-	//StructField is a constant for dynamic logger fields
-	StructField
-	//SliceField is a constant for slice logger fields
-	SliceField
-	//ErrorField is a constant for error logger fields
-	ErrorField
 )
 
 //Hooks is the type to configure an create hooks for the logger implementation
@@ -96,6 +69,7 @@ type Configuration struct {
 	Format Format `json:"format" mapstructure:"format"`
 	Out    Out    `json:"out" mapstructure:"out"`
 	Hooks  Hooks  `json:"hooks" mapstructure:"hooks"`
+	Lazy   bool   `json:"hooks" mapstructure:"lazy"`
 }
 
 func (l Configuration) String() string {
@@ -103,10 +77,19 @@ func (l Configuration) String() string {
 }
 
 //Provider is the contract for logger factories
-type Provider func(...Field) (Logger, error)
+type Provider func(*Configuration, ...Field) (Logger, error)
 
-//FieldProvider is the contract for logger fields factories
-type FieldProvider interface {
+//FieldFunc is the lazy constructor for the fields
+type FieldFunc func() Field
+
+//Field is a struct to send paramaters to log messages
+type Field interface {
+	Name() string
+	Value() interface{}
+}
+
+//FieldAdapter is an adapter to create all field instances
+type FieldAdapter interface {
 	String(string, string) Field
 	Bytes(string, []byte) Field
 	Int(string, int) Field
@@ -120,16 +103,6 @@ type FieldProvider interface {
 	Struct(string, interface{}) Field
 	Slice(string, interface{}) Field
 	Error(error) Field
-}
-
-//FieldType is a type identifier for logger fields
-type FieldType int8
-
-//Field is a struct to send paramaters to log messages
-type Field interface {
-	Key() string
-	Val() interface{}
-	Type() FieldType
 }
 
 //Out is the type for logger writer config

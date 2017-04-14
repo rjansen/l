@@ -1,137 +1,139 @@
 package l
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"time"
 )
 
-func newField(key string, valType FieldType, val interface{}) field {
-	return field{key: key, val: val, valType: valType}
+func newField(name string, value interface{}) field {
+	return field{name: name, value: value}
 }
 
 type field struct {
-	key     string
-	val     interface{}
-	valType FieldType
+	name  string
+	value interface{}
 }
 
-func (f field) Key() string {
-	return f.key
+func (f field) Name() string {
+	return f.name
 }
 
-func (f field) Val() interface{} {
-	return f.val
+func (f field) Value() interface{} {
+	return f.value
 }
 
-func (f field) Type() FieldType {
-	return f.valType
+func (f field) String() string {
+	return fmt.Sprintf("%s=%v", f.Name(), f.Value())
 }
 
-func newFieldProvider() *stdFieldProvider {
-	return new(stdFieldProvider)
+func DefaultFieldAdapter() FieldAdapter {
+	return new(defaultFieldAdapter)
 }
 
-type stdFieldProvider struct {
+type defaultFieldAdapter struct {
 }
 
-func (stdFieldProvider) String(key string, val string) Field {
-	return newField(key, StringField, val)
+func (defaultFieldAdapter) String(key string, val string) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Bytes(key string, val []byte) Field {
-	return newField(key, BytesField, val)
+func (defaultFieldAdapter) Bytes(key string, val []byte) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Int(key string, val int) Field {
-	return newField(key, IntField, val)
+func (defaultFieldAdapter) Int(key string, val int) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Int32(key string, val int32) Field {
-	return newField(key, Int32Field, val)
+func (defaultFieldAdapter) Int32(key string, val int32) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Int64(key string, val int64) Field {
-	return newField(key, Int64Field, val)
+func (defaultFieldAdapter) Int64(key string, val int64) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Float(key string, val float32) Field {
-	return newField(key, FloatField, val)
+func (defaultFieldAdapter) Float(key string, val float32) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Float64(key string, val float64) Field {
-	return newField(key, Float64Field, val)
+func (defaultFieldAdapter) Float64(key string, val float64) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Duration(key string, val time.Duration) Field {
-	return newField(key, DurationField, val)
+func (defaultFieldAdapter) Duration(key string, val time.Duration) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Time(key string, val time.Time) Field {
-	return newField(key, TimeField, val)
+func (defaultFieldAdapter) Time(key string, val time.Time) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Bool(key string, val bool) Field {
-	return newField(key, BoolField, val)
+func (defaultFieldAdapter) Bool(key string, val bool) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Struct(key string, val interface{}) Field {
-	return newField(key, StructField, val)
+func (defaultFieldAdapter) Struct(key string, val interface{}) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Slice(key string, val interface{}) Field {
-	return newField(key, SliceField, val)
+func (defaultFieldAdapter) Slice(key string, val interface{}) Field {
+	return newField(key, val)
 }
 
-func (stdFieldProvider) Error(val error) Field {
-	return newField("error", ErrorField, val)
+func (defaultFieldAdapter) Error(val error) Field {
+	return newField("error", val)
 }
 
 //standardLogger holds the level loggers pointer
 type standardLogger struct {
 	BaseLogger
-	d *log.Logger
-	i *log.Logger
-	w *log.Logger
-	e *log.Logger
-	p *log.Logger
-	f *log.Logger
+	fields []Field
+	d      *log.Logger
+	i      *log.Logger
+	w      *log.Logger
+	e      *log.Logger
+	p      *log.Logger
+	f      *log.Logger
 }
 
 func (s *standardLogger) WithFields(fields ...Field) Logger {
+	s.fields = append(s.fields, fields...)
 	return s
 }
 
 func (s *standardLogger) Debug(m string, fields ...Field) {
-	s.d.Printf("message=%s fields=%+v", m, fields)
+	s.d.Printf("message=%s %v", m, fields)
 }
 
 func (s *standardLogger) Info(m string, fields ...Field) {
-	s.i.Printf("message=%s fields=%+v", m, fields)
+	s.i.Printf("message=%s %v", m, fields)
 }
 
 func (s *standardLogger) Warn(m string, fields ...Field) {
-	s.w.Printf("message=%s fields=%+v", m, fields)
+	s.w.Printf("message=%s %v", m, fields)
 }
 
 func (s *standardLogger) Error(m string, fields ...Field) {
-	s.e.Printf("message=%s fields=%+v", m, fields)
+	s.e.Printf("message=%s %v", m, fields)
 }
 
 func (s *standardLogger) Panic(m string, fields ...Field) {
-	s.f.Printf("message=%s fields=%+v", m, fields)
+	s.f.Printf("message=%s %v", m, fields)
 }
 
 func (s *standardLogger) Fatal(m string, fields ...Field) {
-	s.f.Printf("message=%s fields=%+v", m, fields)
+	s.f.Printf("message=%s %v", m, fields)
 }
 
 func (standardLogger) String() string {
 	return "provider=standard"
 }
 
-func newLogger(field ...Field) (Logger, error) {
+func DefaultLog(c *Configuration, field ...Field) (Logger, error) {
 	//fmt.Printf("CreatingLogger: File=%v Level=%v\n", loggerConfig.Output, loggerConfig.Level)
 	// output, err := os.OpenFile(string(loggerConfig.Out), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	// if err != nil {
