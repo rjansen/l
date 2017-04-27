@@ -45,6 +45,10 @@ func (f ZapField) Value() interface{} {
 	return f.String
 }
 
+func (f ZapField) ZapField() zapcore.Field {
+	return zapcore.Field(f)
+}
+
 type ZapFieldAdapter struct {
 }
 
@@ -108,8 +112,7 @@ func toZapFields(fields ...l.Field) []zapcore.Field {
 	zapFields := make([]zapcore.Field, fieldsLen)
 	// var zapFields []zapcore.Field
 	for i, v := range fields {
-		field := zapcore.Field(v.(ZapField))
-		zapFields[i] = field
+		zapFields[i] = v.(ZapField).ZapField()
 		// zapFields = append(zapFields, field)
 	}
 	return zapFields
@@ -120,43 +123,43 @@ type zapLogger struct {
 	logger *zap.Logger
 }
 
-func (l zapLogger) WithFields(fields ...l.Field) l.Logger {
+func (l *zapLogger) WithFields(fields ...l.Field) l.Logger {
 	return &zapLogger{
 		logger: l.logger.With(toZapFields(fields...)...),
 	}
 }
 
-func (l zapLogger) Debug(message string, fields ...l.Field) {
+func (l *zapLogger) Debug(message string, fields ...l.Field) {
 	if ce := l.logger.Check(zap.DebugLevel, message); ce != nil {
 		ce.Write(toZapFields(fields...)...)
 	}
 }
 
-func (l zapLogger) Info(message string, fields ...l.Field) {
+func (l *zapLogger) Info(message string, fields ...l.Field) {
 	if ce := l.logger.Check(zap.InfoLevel, message); ce != nil {
 		ce.Write(toZapFields(fields...)...)
 	}
 }
 
-func (l zapLogger) Warn(message string, fields ...l.Field) {
+func (l *zapLogger) Warn(message string, fields ...l.Field) {
 	if ce := l.logger.Check(zap.WarnLevel, message); ce != nil {
 		ce.Write(toZapFields(fields...)...)
 	}
 }
 
-func (l zapLogger) Error(message string, fields ...l.Field) {
+func (l *zapLogger) Error(message string, fields ...l.Field) {
 	if ce := l.logger.Check(zap.ErrorLevel, message); ce != nil {
 		ce.Write(toZapFields(fields...)...)
 	}
 }
 
-func (l zapLogger) Panic(message string, fields ...l.Field) {
+func (l *zapLogger) Panic(message string, fields ...l.Field) {
 	if ce := l.logger.Check(zap.PanicLevel, message); ce != nil {
 		ce.Write(toZapFields(fields...)...)
 	}
 }
 
-func (l zapLogger) Fatal(message string, fields ...l.Field) {
+func (l *zapLogger) Fatal(message string, fields ...l.Field) {
 	if ce := l.logger.Check(zap.FatalLevel, message); ce != nil {
 		ce.Write(toZapFields(fields...)...)
 	}

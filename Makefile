@@ -71,7 +71,7 @@ bench_all:
 	#go test -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $(PKGS)
 	go test -bench=. -run="^$$" -benchmem $(PKGS)
 
-.PHONY: benchmark
+.PHONY: bench
 bench:
 	@if [ "$(TEST_PKGS)" == "" ]; then \
 	    echo "Benchmark all Pkgs" ;\
@@ -84,6 +84,18 @@ bench:
 		    go test -bench=$(BENCHS) -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $(REPO)/$$tstpkg || exit 501;\
 		done; \
 	fi
+
+.PHONY: benchcmp
+benchcmp: 
+ifndef BENCH_BEFORE
+	@echo "You must define the BENCH_BEFORE variable!"
+	@exit 1
+endif
+ifndef BENCH_AFTER
+	@echo "You must define the BENCH_AFTER variable!"
+	@exit 1
+endif
+	benchcmp $(BENCH_BEFORE) $(BENCH_AFTER)
 
 .PHONY: coverage
 coverage:
