@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+const (
+	NAME_FIELD = "logName"
+	LOGDEFAULT = "logDefault"
+)
+
 var (
 	//ErrInvalidProvider is the err raised when an invalid provider was provided
 	ErrInvalidProvider = errors.New("l.ErrInvalidProvider Message='The configured provider is invalid")
@@ -13,6 +18,7 @@ var (
 	//ErrInvalidSetup is raised when the Setup method does not call or the provider setup is invalid
 	ErrInvalidSetup = errors.New("l.ErrInvalidSetup Message='You must call the provider setup function before execute this action'")
 	defaultConfig   *Configuration
+	defaultLog      Logger
 	loggerProvider  Provider
 	fieldAdapter    FieldAdapter
 )
@@ -31,6 +37,13 @@ func Setup(c *Configuration, p Provider, a FieldAdapter) error {
 	defaultConfig = c
 	loggerProvider = p
 	fieldAdapter = a
+	log, err := New(
+		String(NAME_FIELD, LOGDEFAULT),
+	)
+	if err != nil {
+		return ErrInvalidProvider
+	}
+	defaultLog = log
 	return nil
 }
 
@@ -104,4 +117,44 @@ func Struct(key string, val interface{}) Field {
 
 func Slice(key string, val interface{}) Field {
 	return fieldAdapter.Slice(key, val)
+}
+
+func DefaultLevel() Level {
+	return defaultLog.Level()
+}
+
+func Enabled(level Level) bool {
+	return defaultLog.Enabled(level)
+}
+
+func WithFields(fields ...Field) Logger {
+	return defaultLog.WithFields(fields...)
+}
+
+func Debug(message string, fields ...Field) {
+	defaultLog.Debug(message, fields...)
+}
+
+func Info(message string, fields ...Field) {
+	defaultLog.Info(message, fields...)
+}
+
+func Warn(message string, fields ...Field) {
+	defaultLog.Warn(message, fields...)
+}
+
+func Error(message string, fields ...Field) {
+	defaultLog.Error(message, fields...)
+}
+
+func Panic(message string, fields ...Field) {
+	defaultLog.Panic(message, fields...)
+}
+
+func Fatal(message string, fields ...Field) {
+	defaultLog.Fatal(message, fields...)
+}
+
+func DefaultString() string {
+	return defaultLog.String()
 }

@@ -61,6 +61,27 @@ func newConfigLogger(t assert.TestingT, c *Configuration) Logger {
 	return logger
 }
 
+func defaultLogTest(t assert.TestingT) {
+	Debug("DebugMessage")
+	Debug("DebugFieldsMessage", lFakeFields()...)
+
+	Info("InfoMessage")
+	Info("InfoFieldsMessage", lFakeFields()...)
+
+	Warn("WarnMessage")
+	Warn("WarnFieldsMessage", lFakeFields()...)
+
+	Error("ErrorMessage")
+	Error("ErrorFieldsMessage", lFakeFields()...)
+
+	assert.NotPanics(t, func() {
+		Panic("PanicErrorMessage")
+	})
+	assert.NotPanics(t, func() {
+		Panic("PanicFieldsMessage", lFakeFields()...)
+	})
+}
+
 func logTest(t assert.TestingT, logger Logger) {
 	logger.Debug("DebugMessage")
 	logger.Debug("DebugFieldsMessage", lFakeFields()...)
@@ -102,6 +123,7 @@ func TestSetupLogger(t *testing.T) {
 func TestNewLogger(t *testing.T) {
 	l := newLogger(t)
 	logTest(t, l)
+	defaultLogTest(t)
 }
 
 func TestNewConfigLogger(t *testing.T) {
