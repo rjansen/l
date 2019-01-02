@@ -1,6 +1,6 @@
 .DS_Store
 
 l*coverage*
-vendor/*/
+vendor/
 *.pprof
 *.test

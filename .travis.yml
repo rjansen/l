@@ -1,0 +1,16 @@
+language: go
+sudo: true
+
+go:
+    - 1.11.x
+
+install: sudo make deps
+
+script: make ci
+
+after_success: make coverage.push
+
+notifications:
+    email:
+        on_success: change
+        on_failure: always
