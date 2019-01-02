@@ -314,11 +314,6 @@ func TestZapLogger(test *testing.T) {
 			level:  DEBUG,
 		},
 		testZapLogger{
-			name:   "Creates a new zap logger instance with discard output",
-			output: DISCARD,
-			level:  DEBUG,
-		},
-		testZapLogger{
 			name:   "Does not creates a new zap logger with invalid level",
 			output: STDOUT,
 			level:  Level("invalid"),

@@ -147,16 +147,6 @@ func TestOut(test *testing.T) {
 			output:   "STDERR",
 			expected: STDERR,
 		},
-		testOut{
-			name:     "Creates a discard Out",
-			output:   "discard",
-			expected: DISCARD,
-		},
-		testOut{
-			name:     "Creates a DISCARD Out",
-			output:   "DISCARD",
-			expected: DISCARD,
-		},
 	}
 
 	for index, scenario := range scenarios {

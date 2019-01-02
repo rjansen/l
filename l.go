@@ -5,8 +5,6 @@ const (
 	STDOUT Out = "stdout"
 	//STDERR redirects any message to stderr
 	STDERR Out = "stderr"
-	//DISCARD set logger to ignore all message
-	DISCARD Out = "discard"
 
 	//ERROR is the error level logger
 	ERROR Level = "error"
@@ -30,8 +28,6 @@ func (o *Out) Set(value string) error {
 		*o = STDOUT
 	case "stderr", "STDERR":
 		*o = STDERR
-	case "discard", "DISCARD":
-		*o = DISCARD
 	default:
 		*o = Out(value)
 	}
