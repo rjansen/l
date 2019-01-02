@@ -15,5 +15,5 @@ A log wrapper library for zap
 - run coverage: `make docker.coverage.text`
 - run html coverage: `make docker.coverage.html`
 
-# migi usage
+# l usage
 Find some samples in the test [file](zap_test.go) a better usage section will be avaiable soon ...
