@@ -1,6 +1,6 @@
 # l [![Build Status](https://travis-ci.org/rjansen/l.svg?branch=master)](https://travis-ci.org/rjansen/l) [![Coverage Status](https://codecov.io/gh/rjansen/l/branch/master/graph/badge.svg)](https://codecov.io/gh/rjansen/l) [![Go Report Card](https://goreportcard.com/badge/github.com/rjansen/l)](https://goreportcard.com/report/github.com/rjansen/l)
 
-A log wrapper library for zap
+A simple log wrapper library for zap
 
 # dependencies
 ## tools (you must provide the installation)
