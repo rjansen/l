@@ -39,7 +39,7 @@ func (scenario testLogger) setup(t *testing.T) {
 
 func TestLogger(test *testing.T) {
 	scenarios := []testLogger{
-		testLogger{
+		{
 			name:   "Creates a new Logger",
 			driver: newMockDriver(),
 			debug: testLogWriter{
@@ -117,32 +117,32 @@ type testOut struct {
 
 func TestOut(test *testing.T) {
 	scenarios := []testOut{
-		testOut{
+		{
 			name:     "Creates default STDOUT Out",
 			output:   "",
 			expected: STDOUT,
 		},
-		testOut{
+		{
 			name:     "Creates a stdout Out",
 			output:   "stdout",
 			expected: STDOUT,
 		},
-		testOut{
+		{
 			name:     "Creates a STDOUT Out",
 			output:   "STDOUT",
 			expected: STDOUT,
 		},
-		testOut{
+		{
 			name:     "Creates a file Out",
 			output:   "pathtoafile",
 			expected: Out("pathtoafile"),
 		},
-		testOut{
+		{
 			name:     "Creates a stderr Out",
 			output:   "stderr",
 			expected: STDERR,
 		},
-		testOut{
+		{
 			name:     "Creates a STDERR Out",
 			output:   "STDERR",
 			expected: STDERR,
@@ -172,42 +172,42 @@ type testLevel struct {
 
 func TestLevel(test *testing.T) {
 	scenarios := []testLevel{
-		testLevel{
+		{
 			name:     "Creates default DEBUG Level",
 			level:    "",
 			expected: DEBUG,
 		},
-		testLevel{
+		{
 			name:     "Creates an invalid Level",
 			level:    "invalid",
 			expected: DEBUG,
 		},
-		testLevel{
+		{
 			name:     "Creates a debug Level",
 			level:    "debug",
 			expected: DEBUG,
 		},
-		testLevel{
+		{
 			name:     "Creates a DEBUG Level",
 			level:    "DEBUG",
 			expected: DEBUG,
 		},
-		testLevel{
+		{
 			name:     "Creates a info Level",
 			level:    "info",
 			expected: INFO,
 		},
-		testLevel{
+		{
 			name:     "Creates a INFO Level",
 			level:    "INFO",
 			expected: INFO,
 		},
-		testLevel{
+		{
 			name:     "Creates a error Level",
 			level:    "error",
 			expected: ERROR,
 		},
-		testLevel{
+		{
 			name:     "Creates a ERROR Level",
 			level:    "ERROR",
 			expected: ERROR,

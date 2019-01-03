@@ -44,7 +44,7 @@ func TestDriver(test *testing.T) {
 		anyType = new(struct{})
 	)
 	scenarios := []testDriver{
-		testDriver{
+		{
 			name:    "Creates a new Driver and writes a debug log",
 			logger:  newMockZapLogger(),
 			writer:  newMockZapWriter(),
@@ -74,7 +74,7 @@ func TestDriver(test *testing.T) {
 				zap.Reflect("anyvalue", anyType),
 			},
 		},
-		testDriver{
+		{
 			name:    "Creates a new Driver and writes a info log",
 			logger:  newMockZapLogger(),
 			writer:  newMockZapWriter(),
@@ -98,7 +98,7 @@ func TestDriver(test *testing.T) {
 				zap.Reflect("anyvalue", anyType),
 			},
 		},
-		testDriver{
+		{
 			name:    "Creates a new Driver and writes a error log",
 			logger:  newMockZapLogger(),
 			writer:  newMockZapWriter(),
@@ -124,7 +124,7 @@ func TestDriver(test *testing.T) {
 				zap.Reflect("anyvalue", anyType),
 			},
 		},
-		testDriver{
+		{
 			name:    "Creates a new Driver but does not provide any writer to log message",
 			logger:  newMockZapLogger(),
 			writer:  nil,
@@ -138,7 +138,7 @@ func TestDriver(test *testing.T) {
 				zap.String("stringvalue", "debugdisabled.stringvalue1"),
 			},
 		},
-		testDriver{
+		{
 			name:    "Creates a new Driver but does not provide any writer to an invalid level",
 			logger:  newMockZapLogger(),
 			writer:  nil,
@@ -209,7 +209,7 @@ func (scenario testZapLoggerDelegate) setup(t *testing.T) {
 
 func TestZapLoggerDelegate(test *testing.T) {
 	scenarios := []testZapLoggerDelegate{
-		testZapLoggerDelegate{
+		{
 			name:    "Creates a new zapLogger and writes a debug log",
 			zapMock: newTestZapMock(zapcore.DebugLevel),
 			level:   zapcore.DebugLevel,
@@ -224,7 +224,7 @@ func TestZapLoggerDelegate(test *testing.T) {
 				zap.NamedError("errorfield", errors.New("errorlog")),
 			},
 		},
-		testZapLoggerDelegate{
+		{
 			name:    "Creates a new zapLogger and writes a info log",
 			zapMock: newTestZapMock(zapcore.InfoLevel),
 			level:   zapcore.InfoLevel,
@@ -239,7 +239,7 @@ func TestZapLoggerDelegate(test *testing.T) {
 				zap.NamedError("errorfield", errors.New("errorlog")),
 			},
 		},
-		testZapLoggerDelegate{
+		{
 			name:    "Creates a new zapLogger and writes a error log",
 			zapMock: newTestZapMock(zapcore.ErrorLevel),
 			level:   zapcore.ErrorLevel,
@@ -293,33 +293,33 @@ func (scenario testZapLogger) setup(t *testing.T) {
 
 func TestZapLogger(test *testing.T) {
 	scenarios := []testZapLogger{
-		testZapLogger{
+		{
 			name:   "Creates a new debug level zap logger instance",
 			output: STDOUT,
 			level:  DEBUG,
 		},
-		testZapLogger{
+		{
 			name:   "Creates a new info level zap logger instance",
 			output: STDOUT,
 			level:  INFO,
 		},
-		testZapLogger{
+		{
 			name:   "Creates a new error level zap logger instance",
 			output: STDOUT,
 			level:  ERROR,
 		},
-		testZapLogger{
+		{
 			name:   "Creates a new zap logger instance with stderr output",
 			output: STDERR,
 			level:  DEBUG,
 		},
-		testZapLogger{
+		{
 			name:   "Does not creates a new zap logger with invalid level",
 			output: STDOUT,
 			level:  Level("invalid"),
 			err:    errors.New("unrecognized level: \"invalid\""),
 		},
-		testZapLogger{
+		{
 			name:   "Does not creates a new zap logger with invalid output",
 			output: Out(""),
 			level:  DEBUG,

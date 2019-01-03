@@ -16,11 +16,11 @@ type testRegister struct {
 
 func TestRegister(test *testing.T) {
 	scenarios := []testRegister{
-		testRegister{
+		{
 			name:   "Register the Logger reference",
 			logger: NewZapLoggerDefault(),
 		},
-		testRegister{
+		{
 			name:   "Register a nil Logger reference",
 			logger: nil,
 		},
@@ -62,23 +62,23 @@ func (scenario *testReference) setup(t *testing.T) {
 
 func TestReference(test *testing.T) {
 	scenarios := []testReference{
-		testReference{
+		{
 			name: "Access the Logger Reference",
 			references: map[yggdrasil.Path]yggdrasil.Reference{
 				loggerPath: yggdrasil.NewReference(NewZapLoggerDefault()),
 			},
 		},
-		testReference{
+		{
 			name: "Access a nil Logger Reference",
 			references: map[yggdrasil.Path]yggdrasil.Reference{
 				loggerPath: yggdrasil.NewReference(nil),
 			},
 		},
-		testReference{
+		{
 			name: "When Logger was not register returns path not found",
 			err:  yggdrasil.ErrPathNotFound,
 		},
-		testReference{
+		{
 			name: "When a invalid Logger was register returns invalid reference error",
 			references: map[yggdrasil.Path]yggdrasil.Reference{
 				loggerPath: yggdrasil.NewReference(new(struct{})),
