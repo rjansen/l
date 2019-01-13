@@ -68,7 +68,7 @@ fmt:
 
 .PHONY: vet
 vet:
-	@echo "$(REPO) vet: $(PKGS)"
+	@echo "$(REPO) vet"
 	go vet $(PKGS)
 
 .PHONY: debug
@@ -79,71 +79,29 @@ debug:
 .PHONY: debugtest
 debugtest:
 	@echo "$(REPO) debugtest"
-ifeq ($(TEST_PKGS),)
-	@echo "debugtest: pkgs=*"
-	dlv test --build-flags='$(REPO)' -- -test.run $(TESTS)
-else
-	@echo "debugtest: pkgs=$(TEST_PKGS)"
-	dlv test --build-flags='$(REPO)/$(TEST_PKGS)' -- -test.run $(TESTS)
-endif
+	dlv test --build-flags='$(TEST_PKGS)' -- -test.run $(TESTS)
 
 .PHONY: test
 test:
 	@echo "$(REPO) test"
-ifeq ($(TEST_PKGS),)
-	@echo "test: pkgs=*"
-	gotestsum -f short-verbose -- -v -race -run $(TESTS) $(PKGS)
-else
-	@echo "test: pkgs=$(TEST_PKGS)"
-	$(foreach pkg,$(TEST_PKGS),\
-		gotestsum -f short-verbose -- -v -race -run $(TESTS) $(REPO)/$(pkg);\
-	)
-endif
+	gotestsum -f short-verbose -- -v -race -run $(TESTS) $(TEST_PKGS)
 
 .PHONY: itest
 itest:
 	@echo "$(REPO) itest"
-ifeq ($(TEST_PKGS),)
-	@echo "itest: pkgs=*"
-	gotestsum -f short-verbose -- -tags=integration -v -race -run $(TESTS) $(PKGS)
-else
-	@echo "itest: pkgs=$(TEST_PKGS)"
-	$(foreach pkg,$(TEST_PKGS),\
-		gotestsum -f short-verbose -- -tags=integration -v -race -run $(TESTS) $(REPO)/$(pkg);\
-	)
-endif
+	gotestsum -f short-verbose -- -tags=integration -v -race -run $(TESTS) $(TEST_PKGS)
 
 .PHONY: bench
 bench:
 	@echo "$(REPO) bench"
-ifeq ($(TEST_PKGS),)
-	@echo "bench: pkgs=*"
-	gotestsum -f short-verbose -- -bench=. -run="^$$" -benchmem $(PKGS)
-else
-	@echo "bench: pkgs=$(TEST_PKGS)"
-	$(foreach pkg,$(TEST_PKGS),\
-		gotestsum -f short-verbose -- -bench=. -run="^$$" -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem $(REPO)/$(pkg);\
-	)
-endif
+	gotestsum -f short-verbose -- -bench=. -run="^$$" -benchmem $(TEST_PKGS)
 
 .PHONY: coverage
 coverage:
 	@echo "$(REPO) coverage"
 	@touch $(COVERAGE_FILE)
-ifeq ($(TEST_PKGS),)
-	@echo "coverage: pkgs=*"
 	gotestsum -f short-verbose -- -tags=integration -v -run $(TESTS) \
-			  -covermode=atomic -coverpkg=./... -coverprofile=$(COVERAGE_FILE) $(PKGS)
-else
-	@echo "bench: pkgs=$(TEST_PKGS)"
-	@touch $(COVERAGE_PKG_FILE)
-	@echo 'mode: atomic' > $(COVERAGE_FILE)
-	$(foreach pkg,$(TEST_PKGS),\
-		gotestsum -f short-verbose -- -tags=integration -v -run $(TESTS) \
-				  -covermode=atomic -coverpkg=./... -coverprofile=$(COVERAGE_PKG_FILE) $(REPO)/$(pkg);\
-		grep -v 'mode: atomic' $(COVERAGE_PKG_FILE) >> $(COVERAGE_FILE);\
-	)
-endif
+			  -covermode=atomic -coverpkg=./... -coverprofile=$(COVERAGE_FILE) $(TEST_PKGS)
 
 .PHONY: coverage.text
 coverage.text: coverage
@@ -154,11 +112,12 @@ coverage.text: coverage
 coverage.html: coverage
 	@echo "$(REPO) coverage.html"
 	go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
-	open $(COVERAGE_HTML) || google-chrome $(COVERAGE_HTML) || google-chrome-stable $(COVERAGE_HTML)
+	@open $(COVERAGE_HTML) || google-chrome $(COVERAGE_HTML) || google-chrome-stable $(COVERAGE_HTML)
 
 .PHONY: coverage.push
 coverage.push:
 	@echo "$(REPO) coverage.push"
+	@#download codecov script and push report with oneline cmd
 	@#curl -sL https://codecov.io/bash | bash -s - -f $(COVERAGE_FILE)$(if $(CODECOV_TOKEN), -t $(CODECOV_TOKEN),)
 	@codecov -f $(COVERAGE_FILE)$(if $(CODECOV_TOKEN), -t $(CODECOV_TOKEN),)
 
