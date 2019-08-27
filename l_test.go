@@ -1,6 +1,7 @@
 package l
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -33,8 +34,6 @@ func (scenario testLogger) setup(t *testing.T) {
 
 	scenario.error.writer.On("Write", mock.AnythingOfType("[]l.Value")).Once()
 	scenario.driver.On("Log", ERROR, scenario.error.message).Return(scenario.error.writer).Once()
-
-	scenario.driver.On("Close").Once()
 }
 
 func TestLogger(test *testing.T) {
@@ -91,19 +90,17 @@ func TestLogger(test *testing.T) {
 				log := New(scenario.driver)
 				assert.NotNil(t, log, "logger instance")
 
-				log.Debug(scenario.debug.message, scenario.debug.values...)
+				log.Debug(context.Background(), scenario.debug.message, scenario.debug.values...)
 				scenario.driver.AssertCalled(t, "Log", DEBUG, scenario.debug.message)
 				scenario.debug.writer.AssertCalled(t, "Write", scenario.debug.values)
 
-				log.Info(scenario.info.message, scenario.info.values...)
+				log.Info(context.Background(), scenario.info.message, scenario.info.values...)
 				scenario.driver.AssertCalled(t, "Log", INFO, scenario.info.message)
 				scenario.info.writer.AssertCalled(t, "Write", scenario.info.values)
 
-				log.Error(scenario.error.message, scenario.error.values...)
+				log.Error(context.Background(), scenario.error.message, scenario.error.values...)
 				scenario.driver.AssertCalled(t, "Log", ERROR, scenario.error.message)
 				scenario.error.writer.AssertCalled(t, "Write", scenario.error.values)
-
-				log.Close()
 			},
 		)
 	}
