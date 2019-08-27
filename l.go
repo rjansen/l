@@ -1,5 +1,7 @@
 package l
 
+import "context"
+
 const (
 	//STDOUT any message to stdout
 	STDOUT Out = "stdout"
@@ -65,10 +67,9 @@ func NewValue(name string, value interface{}) Value {
 }
 
 type Logger interface {
-	Debug(string, ...Value)
-	Info(string, ...Value)
-	Error(string, ...Value)
-	Close()
+	Debug(context.Context, string, ...Value)
+	Info(context.Context, string, ...Value)
+	Error(context.Context, string, ...Value)
 }
 
 type LogWriter interface {
@@ -84,26 +85,22 @@ type logger struct {
 	driver Driver
 }
 
-func (log logger) log(level Level, msg string, values ...Value) {
+func (log logger) log(_ context.Context, level Level, msg string, values ...Value) {
 	if writer := log.driver.Log(level, msg); writer != nil {
 		writer.Write(values...)
 	}
 }
 
-func (log logger) Debug(msg string, values ...Value) {
-	log.log(DEBUG, msg, values...)
+func (log logger) Debug(ctx context.Context, msg string, values ...Value) {
+	log.log(ctx, DEBUG, msg, values...)
 }
 
-func (log logger) Info(msg string, values ...Value) {
-	log.log(INFO, msg, values...)
+func (log logger) Info(ctx context.Context, msg string, values ...Value) {
+	log.log(ctx, INFO, msg, values...)
 }
 
-func (log logger) Error(msg string, values ...Value) {
-	log.log(ERROR, msg, values...)
-}
-
-func (log logger) Close() {
-	log.driver.Close()
+func (log logger) Error(ctx context.Context, msg string, values ...Value) {
+	log.log(ctx, ERROR, msg, values...)
 }
 
 func New(driver Driver) Logger {
