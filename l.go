@@ -1,6 +1,9 @@
 package l
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 const (
 	//STDOUT any message to stdout
@@ -107,4 +110,28 @@ func New(driver Driver) Logger {
 	return logger{
 		driver: driver,
 	}
+}
+
+func SetLoggerDefault(logger Logger) error {
+	if logger == nil {
+		return errors.New("err_invalid_parameter{Message='Logger is blank'}")
+	}
+
+	LoggerDefault = logger
+	return nil
+}
+
+// LoggerDefault is the back-end implementation used on the log package level functions
+var LoggerDefault = NewZapLoggerDefault()
+
+func Debug(ctx context.Context, msg string, values ...Value) {
+	LoggerDefault.Debug(ctx, msg, values...)
+}
+
+func Info(ctx context.Context, msg string, values ...Value) {
+	LoggerDefault.Info(ctx, msg, values...)
+}
+
+func Error(ctx context.Context, msg string, values ...Value) {
+	LoggerDefault.Error(ctx, msg, values...)
 }
