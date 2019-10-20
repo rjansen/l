@@ -8,7 +8,6 @@ A simple log wrapper for zap
 
 ## libraries
 - [zap](https://github.com/uber-go/zap)
-- [yggdrail](https://github.com/rjansen/yggdrasil)
 
 # tests and coverage
 - run unit tests: `make docker.test`
