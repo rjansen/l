@@ -3,12 +3,17 @@ sudo: true
 
 go:
     - 1.11.x
+    - 1.12.x
+    - 1.13.x
 
-install: sudo make deps
+env:
+  - OS=linux_amd64 TMP_DIR=/tmp
+
+install: sudo make codecov.install gotestsum.install
 
 script: make ci
 
-after_success: make coverage.push
+after_success: make codecov.push
 
 notifications:
     email:
