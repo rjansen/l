@@ -39,23 +39,23 @@ go.lint:
 .PHONY: go.test
 go.test:
 	@echo "$(NAME)@$(BUILD) go.test $(GO_TEST_PKGS)"
-	gotestsum -f $(GO_TEST_VERBOSITY) -- -v -race -count 1 -run $(GO_TESTS) $(GO_TEST_PKGS)
+	$(GOTESTSUM) -f $(GO_TEST_VERBOSITY) -- -v -race -count 1 -run $(GO_TESTS) $(GO_TEST_PKGS)
 
 .PHONY: go.itest
 go.itest:
 	@echo "$(NAME)@$(BUILD) go.itest $(GO_TEST_PKGS)"
-	gotestsum -f $(GO_TEST_VERBOSITY) -- -tags="integration" -v -race -count 1 -run $(GO_TESTS) $(GO_TEST_PKGS)
+	$(GOTESTSUM) -f $(GO_TEST_VERBOSITY) -- -tags="integration" -v -race -count 1 -run $(GO_TESTS) $(GO_TEST_PKGS)
 
 .PHONY: go.bench
 go.bench:
 	@echo "$(NAME)@$(BUILD) go.bench $(GO_TEST_PKGS)"
-	gotestsum -f $(TEST_VERBOSITY) -- -bench=. -run="^$$" -benchmem $(GO_TEST_PKGS)
+	$(GOTESTSUM) -f $(TEST_VERBOSITY) -- -bench=. -run="^$$" -benchmem $(GO_TEST_PKGS)
 
 .PHONY: go.coverage
 go.coverage: $(TMP_DIR)
 	@echo "$(NAME)@$(BUILD) go.coverage $(GO_TEST_PKGS)"
 	@touch $(GO_COVERAGE_FILE)
-	gotestsum -f $(GO_TEST_VERBOSITY) -- -tags="integration" -v -race -count 1 -run $(GO_TESTS) \
+	$(GOTESTSUM) -f $(GO_TEST_VERBOSITY) -- -tags="integration" -v -race -count 1 -run $(GO_TESTS) \
 		-covermode=atomic -coverpkg=$(GO_PKGS) -coverprofile=$(GO_COVERAGE_FILE) $(GO_TEST_PKGS)
 
 .PHONY: go.coverage.text

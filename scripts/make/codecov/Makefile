@@ -1,9 +1,9 @@
 CODECOV_TMP_DIR    := $(TMP_DIR)/codecov
-CODECOV_NAME       := codecov
+CODECOV_NAME       := codecov.$(OS)_$(ARCH)
 CODECOV_FILE       := $(CODECOV_TMP_DIR)/$(CODECOV_NAME)
 CODECOV_URL        := https://codecov.io/bash
 CODECOV_BIN        := codecov
-CODECOV            := $(or $(shell which $(CODECOV_BIN)),$(TOOLS_DIR)/$(CODECOV_BIN))
+CODECOV            := $(or $(shell which $(CODECOV_BIN)),$(CODECOV_TMP_DIR)/$(CODECOV_BIN))
 
 .PHONY: codecov.clearcache
 codecov.clearcache:
@@ -28,10 +28,10 @@ $(CODECOV_FILE): | $(CODECOV_TMP_DIR)
 
 $(CODECOV): | $(CODECOV_FILE)
 	@echo "$(NAME)@$(BUILD) $(CODECOV)"
-	cd $(CODECOV_TMP_DIR) && chmod a+x $(CODECOV_NAME) && cp -f $(CODECOV_BIN) $(TOOLS_DIR)
+	cd $(CODECOV_TMP_DIR) && chmod a+x $(CODECOV_NAME) && cp -vf $(CODECOV_NAME) $(CODECOV)
 	$(CODECOV) -h > /dev/null 2>&1
 
 .PHONY: codecov.push
-codecov.push: $(CODECOV)
+codecov.push:
 	@echo "$(NAME) codecov.push"
 	$(CODECOV) -f $(CODECOV_COVERAGE_FILE)$(if $(CODECOV_TOKEN), -t $(CODECOV_TOKEN),)
