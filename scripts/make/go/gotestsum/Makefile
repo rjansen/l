@@ -1,10 +1,11 @@
 GOTESTSUM_TMP_DIR  := $(TMP_DIR)/gotestsum
 GOTESTSUM_VERSION  := 0.3.5
-GOTESTSUM_NAME     := gotestsum_$(GOTESTSUM_VERSION)_$(OS).tar.gz
+# TODO: Create a map between os + arch filename and our scripts convention
+GOTESTSUM_NAME     := gotestsum_$(GOTESTSUM_VERSION)_$(OS)_$(ARCH).tar.gz
 GOTESTSUM_FILE     := $(GOTESTSUM_TMP_DIR)/$(GOTESTSUM_NAME)
 GOTESTSUM_URL      := https://github.com/gotestyourself/gotestsum/releases/download/v$(GOTESTSUM_VERSION)/$(GOTESTSUM_NAME)
 GOTESTSUM_BIN      := gotestsum
-GOTESTSUM          := $(or $(shell which $(GOTESTSUM_BIN)),$(TOOLS_DIR)/$(GOTESTSUM_BIN))
+GOTESTSUM          := $(or $(shell which $(GOTESTSUM_BIN)),$(GOTESTSUM_TMP_DIR)/$(GOTESTSUM_BIN))
 
 .PHONY: gotestsum.clearcache
 gotestsum.clearcache:
@@ -29,5 +30,5 @@ $(GOTESTSUM_FILE): | $(GOTESTSUM_TMP_DIR)
 
 $(GOTESTSUM): | $(GOTESTSUM_FILE)
 	@echo "$(NAME)@$(BUILD) $(GOTESTSUM)"
-	@cd $(GOTESTSUM_TMP_DIR) && tar xf $(GOTESTSUM_NAME) && mv -f $(GOTESTSUM_BIN) $(TOOLS_DIR)
+	cd $(GOTESTSUM_TMP_DIR) && tar xf $(GOTESTSUM_NAME)
 	$(GOTESTSUM) --help > /dev/null 2>&1
