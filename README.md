@@ -16,3 +16,4 @@ A simple log wrapper for zap
 
 # l usage
 Find some samples in the test [file](zap_test.go) a better usage section will be avaiable soon ...
+xxx
